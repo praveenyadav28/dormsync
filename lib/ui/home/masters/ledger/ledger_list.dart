@@ -399,7 +399,7 @@ class _LedgerListScreenState extends State<LedgerListScreen> {
     if (response["status"] == true) {
       List<LedgerList> allLedgers = ledgerListFromJson(response['data']);
       ledgerList =
-          allLedgers.where((ledger) => ledger.other1 == "LGR").toList();
+          allLedgers.where((ledger) => ledger.other1 != "STU").toList();
     }
   }
 

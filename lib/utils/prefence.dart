@@ -53,7 +53,6 @@ logoutPrefData() async {
   await prefs.remove(PrefKeys.branchLength);
   await prefs.remove(PrefKeys.licenseNo);
   await prefs.remove(PrefKeys.locationId);
-  await prefs.remove(PrefKeys.locationId);
   await prefs.remove(PrefKeys.phoneNumber);
   await prefs.remove(PrefKeys.email);
   await prefs.remove(PrefKeys.staffId);

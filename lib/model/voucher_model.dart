@@ -24,6 +24,8 @@ class VoucherModel {
   String? paymentBalance;
   String? accountHead;
   String? accountBalance;
+  String? accLedgerId;
+  String? payLedgerId;
   String? amount;
   String? narration;
   String? paidBy;
@@ -49,6 +51,8 @@ class VoucherModel {
     this.paymentBalance,
     this.accountHead,
     this.accountBalance,
+    this.accLedgerId,
+    this.payLedgerId,
     this.amount,
     this.narration,
     this.paidBy,
@@ -73,6 +77,8 @@ class VoucherModel {
     voucherNo: json["voucher_no"],
     paymentMode: json["payment_mode"],
     paymentBalance: json["payment_balance"].toString(),
+    payLedgerId: json["pay_ladger_id"].toString(),
+    accLedgerId: json["acc_ladger_id"].toString(),
     accountHead: json["account_head"],
     accountBalance: json["account_balance"].toString(),
     amount: json["amount"].toString(),
@@ -101,6 +107,8 @@ class VoucherModel {
     "voucher_no": voucherNo,
     "payment_mode": paymentMode,
     "payment_balance": paymentBalance,
+    "pay_ladger_id": payLedgerId,
+    "acc_ladger_id": accLedgerId,
     "account_head": accountHead,
     "account_balance": accountBalance,
     "amount": amount,

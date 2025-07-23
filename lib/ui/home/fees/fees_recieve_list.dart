@@ -1,4 +1,4 @@
-import 'package:dorm_sync/model/voucher_model.dart';
+import 'package:dorm_sync/model/fees_receive.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -8,15 +8,15 @@ import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:flutter/material.dart';
 
-class FeesRecieveListScreen extends StatefulWidget {
-  const FeesRecieveListScreen({super.key});
+class FeesReceiveListScreen extends StatefulWidget {
+  const FeesReceiveListScreen({super.key});
 
   @override
-  State<FeesRecieveListScreen> createState() => _FeesRecieveListScreenState();
+  State<FeesReceiveListScreen> createState() => _FeesReceiveListScreenState();
 }
 
-class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
-  List<VoucherModel> voucherList = [];
+class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
+  List<ReceivedListModel> feesReceiveList = [];
 
   // Store the filter values
   String _searchQuery = '';
@@ -25,15 +25,16 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
   final List<int> _pageSizeOptions = [5, 10, 20, 50]; // Page size options
 
   // Function to filter the data
-  List<VoucherModel> get _filteredData {
-    List<VoucherModel> result = voucherList; // Initialize with unfiltered data
+  List<ReceivedListModel> get _filteredData {
+    List<ReceivedListModel> result =
+        feesReceiveList; // Initialize with unfiltered data
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
 
       result =
-          voucherList.where((voucher) {
-            final Map<String, dynamic> voucherMap = voucher.toJson();
-            return voucherMap.values.any((value) {
+          feesReceiveList.where((feesReceive) {
+            final Map<String, dynamic> feesReceiveMap = feesReceive.toJson();
+            return feesReceiveMap.values.any((value) {
               return value?.toString().toLowerCase().contains(query) ?? false;
             });
           }).toList();
@@ -42,7 +43,7 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
   }
 
   // Function to get paginated data
-  List<VoucherModel> get _pagedData {
+  List<ReceivedListModel> get _pagedData {
     final startIndex = (_currentPage - 1) * _pageSize;
     final endIndex = startIndex + _pageSize;
     final filteredData = _filteredData;
@@ -72,7 +73,7 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
 
   @override
   void initState() {
-    getFeesRecieveList().then((value) {
+    getFeesReceiveList().then((value) {
       setState(() {});
     });
     super.initState();
@@ -100,7 +101,7 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
                 children: [
                   SizedBox(width: 30),
                   Text(
-                    "Fees Recieve-List",
+                    "Fees Receive-List",
                     style: TextStyle(
                       color: AppColor.white,
                       fontSize: 16,
@@ -112,9 +113,9 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
                     onTap: () async {
                       var updatedData = await Navigator.of(
                         context,
-                      ).pushNamed('/fees Recieve', arguments: null);
+                      ).pushNamed('/fees Receive', arguments: null);
                       if (updatedData == "New Data") {
-                        getFeesRecieveList().then((value) {
+                        getFeesReceiveList().then((value) {
                           setState(() {});
                         });
                       }
@@ -262,28 +263,28 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
                   decoration: BoxDecoration(color: Color(0xffE5FDDD)),
                   children: [
                     tableHeader('Fees No.'),
-                    tableHeader('Recieve Date'),
+                    tableHeader('Receive Date'),
                     tableHeader('Student Name'),
                     tableHeader('Father Name'),
-                    tableHeader('Recieve Amt'),
-                    tableHeader('Recieve By'),
+                    tableHeader('Receive Amt'),
+                    tableHeader('Receive By'),
                     tableHeader('Narration'),
                     tableHeader('Action'),
                   ],
                 ),
                 // Table Data Rows
-                ..._pagedData.map((voucher) {
+                ..._pagedData.map((feesReceive) {
                   return TableRow(
                     decoration: BoxDecoration(color: AppColor.white),
 
                     children: [
-                      tableBody(voucher.voucherNo.toString()),
-                      tableBody(voucher.voucherDate ?? ''),
-                      tableBody(voucher.accountHead ?? ''),
-                      tableBody(voucher.voucherType ?? ''),
-                      tableBody(voucher.amount ?? ''),
-                      tableBody(voucher.paidBy),
-                      tableBody(voucher.narration),
+                      tableBody(feesReceive.feesNo.toString()),
+                      tableBody(feesReceive.date ?? ''),
+                      tableBody(feesReceive.hostelerName ?? ''),
+                      tableBody(feesReceive.fatherName ?? ''),
+                      tableBody(feesReceive.amount ?? ''),
+                      tableBody(feesReceive.receiveBy),
+                      tableBody(feesReceive.narration),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -296,11 +297,11 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
                                   var updatedData = await Navigator.of(
                                     context,
                                   ).pushNamed(
-                                    '/fees Recieve',
-                                    arguments: voucher,
+                                    '/fees Receive',
+                                    arguments: feesReceive,
                                   );
                                   if (updatedData == "New Data") {
-                                    getFeesRecieveList().then((value) {
+                                    getFeesReceiveList().then((value) {
                                       setState(() {});
                                     });
                                   }
@@ -331,10 +332,10 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
                                                 backgroundColor: AppColor.red,
                                               ),
                                               onPressed: () {
-                                                deleteFeesRecieve(
-                                                  voucher.id!,
+                                                deleteFeesReceive(
+                                                  feesReceive.id!,
                                                 ).then((value) {
-                                                  getFeesRecieveList().then((
+                                                  getFeesReceiveList().then((
                                                     value,
                                                   ) {
                                                     setState(() {
@@ -397,15 +398,15 @@ class _FeesRecieveListScreenState extends State<FeesRecieveListScreen> {
     );
   }
 
-  Future getFeesRecieveList() async {
+  Future getFeesReceiveList() async {
     var response = await ApiService.fetchData(
-      "voucher?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "fees_received?session_id=${Preference.getint(PrefKeys.sessionId)}",
     );
-    voucherList = voucherModelFromJson(response['data']);
+    feesReceiveList = feesReceiveModelFromJson(response['data']);
   }
 
-  Future deleteFeesRecieve(int id) async {
-    var response = await ApiService.deleteData("voucher/$id");
+  Future deleteFeesReceive(int id) async {
+    var response = await ApiService.deleteData("fees_received/$id");
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
     } else {

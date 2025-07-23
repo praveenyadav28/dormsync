@@ -65,16 +65,21 @@ class CommonTextFieldBorder extends StatelessWidget {
     this.controller,
     this.readOnly,
     this.onTap,
+    this.onChanged,
     this.onPressIcon,
+    this.focuesNode,
     super.key,
   });
   String image;
   String? hintText;
 
+  void Function(String)? onChanged;
   TextEditingController? controller;
   bool? readOnly;
   void Function()? onTap;
   void Function()? onPressIcon;
+
+  FocusNode? focuesNode;
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -83,6 +88,7 @@ class CommonTextFieldBorder extends StatelessWidget {
         SizedBox(width: 5),
         Expanded(
           child: TextFormField(
+            focusNode: focuesNode,
             controller: controller,
             onTap: onTap,
             readOnly: readOnly ?? false,
@@ -91,9 +97,12 @@ class CommonTextFieldBorder extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
             textAlign: TextAlign.center,
+            onChanged: onChanged,
             decoration: InputDecoration(
               isDense: true,
 
+              fillColor: AppColor.white,
+              filled: readOnly == true ? false : true,
               border: OutlineInputBorder(),
               hintText: hintText ?? "",
               hintStyle: TextStyle(
@@ -116,6 +125,7 @@ class TitleTextField extends StatelessWidget {
     this.controller,
     super.key,
     this.onTap,
+    this.onPressIcon,
     this.onChanged,
     this.onSaved,
     this.readOnly,
@@ -125,6 +135,7 @@ class TitleTextField extends StatelessWidget {
   String? hintText;
   TextEditingController? controller;
   void Function()? onTap;
+  void Function()? onPressIcon;
   void Function(String)? onChanged;
   void Function(String?)? onSaved;
   bool? readOnly;
@@ -140,7 +151,12 @@ class TitleTextField extends StatelessWidget {
         SizedBox(height: 7),
         Row(
           children: [
-            image == null ? SizedBox(width: 0) : Image.asset(image, height: 26),
+            image == null
+                ? SizedBox(width: 0)
+                : InkWell(
+                  onTap: onPressIcon,
+                  child: Image.asset(image, height: 26),
+                ),
             SizedBox(width: image == null ? 0 : 5),
             Expanded(
               child: TextFormField(

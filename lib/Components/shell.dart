@@ -26,8 +26,9 @@ import 'package:dorm_sync/ui/home/masters/item/item_list.dart';
 import 'package:dorm_sync/ui/home/masters/item/item_master.dart';
 import 'package:dorm_sync/ui/home/masters/ledger/ledger_list.dart';
 import 'package:dorm_sync/ui/home/masters/ledger/ledger_master.dart';
-import 'package:dorm_sync/ui/home/nodues/nodues_list.dart';
+import 'package:dorm_sync/ui/home/nodues/nodues.dart';
 import 'package:dorm_sync/ui/home/profile/profile.dart';
+import 'package:dorm_sync/ui/home/reports/ledger_report.dart';
 import 'package:dorm_sync/ui/home/room/assign_room.dart';
 import 'package:dorm_sync/ui/home/room/room_allotment.dart';
 import 'package:dorm_sync/ui/home/student_status/activate_student.dart';
@@ -125,6 +126,7 @@ class _ShellState extends State<Shell> {
       '/student Report': (ctx) => const StudentHistoryList(),
       '/leave report': (ctx) => const LeaveReportList(),
       '/fees report': (ctx) => const FeesReportList(),
+      '/ledger report': (ctx) => const LedgerReport(),
     },
     {
       '/': (ctx) => const HostelersList(),
@@ -148,8 +150,8 @@ class _ShellState extends State<Shell> {
     {
       '/fees List': (ctx) => const FeesListScreen(),
       '/fees Entry': (ctx) => const FeesEntry(),
-      '/fees Recieve List': (ctx) => const FeesRecieveListScreen(),
-      '/fees Recieve': (ctx) => const FeesRecieve(),
+      '/fees Receive List': (ctx) => const FeesReceiveListScreen(),
+      '/fees Receive': (ctx) => const FeesReceive(),
     },
     {
       '/': (ctx) => const VisitorListScreen(),
@@ -177,7 +179,7 @@ class _ShellState extends State<Shell> {
       '/view Prospect': (ctx) => const FileInfo(),
       '/follow Up': (ctx) => const FollowUpCRM(),
     },
-    {'/': (ctx) => const NoDuesList()},
+    {'/': (ctx) => const NoDuesCheck()},
     {
       '/session': (ctx) => SessionScreen(),
       '/deactivated List': (ctx) => DeactivatedListScreen(),
@@ -377,6 +379,10 @@ class _ShellState extends State<Shell> {
                             value: '/fees report',
                             child: Text('Fees Report'),
                           ),
+                          PopupMenuItem(
+                            value: '/ledger report',
+                            child: Text('Ledger Report'),
+                          ),
                         ],
                       );
 
@@ -441,8 +447,8 @@ class _ShellState extends State<Shell> {
                             child: Text('Fees Entry'),
                           ),
                           PopupMenuItem(
-                            value: '/fees Recieve List',
-                            child: Text('Fees Recieve'),
+                            value: '/fees Receive List',
+                            child: Text('Fees Receive'),
                           ),
                         ],
                       );

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:dorm_sync/model/ledger.dart';
 import 'package:dorm_sync/model/staff.dart';
+import 'package:dorm_sync/model/voucher_model.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
@@ -26,6 +27,8 @@ class CreateVoucher extends StatefulWidget {
 }
 
 class _CreateVoucherState extends State<CreateVoucher> {
+  VoucherModel? voucherData;
+
   String? selectedVoucherType;
   List<LedgerList> ledgerList = [];
   List<StaffList> staffList = [];
@@ -38,8 +41,6 @@ class _CreateVoucherState extends State<CreateVoucher> {
   final TextEditingController paymentModeController = TextEditingController();
   final TextEditingController accountHeadController = TextEditingController();
   final TextEditingController paidByController = TextEditingController();
-  final TextEditingController studentInstallmentController =
-      TextEditingController();
   final TextEditingController narrationController = TextEditingController();
   final TextEditingController remarkController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
@@ -62,6 +63,9 @@ class _CreateVoucherState extends State<CreateVoucher> {
   String? accountHeadBalance = '';
   String? accountHeadType = '';
 
+  int? payLedgerId;
+  int? accLedgerId;
+
   List<String> voucherTypes = [
     'Receipt',
     'Expense',
@@ -70,15 +74,37 @@ class _CreateVoucherState extends State<CreateVoucher> {
     'Payment',
   ];
 
-  String studentId = '';
   bool isChecked = false;
 
   @override
   void initState() {
-    super.initState();
-    getVoucherId().then((_) {
-      setState(() {});
+    Future.delayed(Duration.zero, () {
+      final args = ModalRoute.of(context)?.settings.arguments;
+      if (args != null && voucherData == null) {
+        voucherData = args as VoucherModel;
+
+        selectedVoucherType = voucherData!.voucherType;
+        voucherNumberController.text = voucherData!.voucherNo.toString();
+        voucherDatepicker.text = voucherData!.voucherDate ?? "";
+        accountHeadController.text = voucherData!.accountHead ?? "";
+        accountHeadBalance = voucherData!.accountBalance ?? "";
+        paymentModeController.text = voucherData!.paymentMode ?? "";
+        paymentBalance = voucherData!.paymentBalance?.toString() ?? "0";
+        amountController.text = voucherData!.amount?.toString() ?? "0";
+        narrationController.text = voucherData!.narration?.toString() ?? "0";
+        paidByController.text = voucherData!.paidBy?.toString() ?? "0";
+        remarkController.text = voucherData!.remark?.toString() ?? "0";
+        payLedgerId = int.tryParse(voucherData!.payLedgerId!);
+        accLedgerId = int.tryParse(voucherData!.accLedgerId!);
+      } else {
+        getVoucherId().then((_) {
+          setState(() {});
+        });
+      }
     });
+
+    super.initState();
+
     fetchInitialData();
   }
 
@@ -298,7 +324,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                         onSuggestionTap: (val) {
                           setState(() {
                             accountHeadController.text = val.item!.ledgerName!;
-                            studentId = val.item!.id.toString();
+                            accLedgerId = val.item!.id;
                             selectedAccountHeadLedger = val.item;
                             accountHeadBalance =
                                 selectedAccountHeadLedger?.openingBalance ?? '';
@@ -386,6 +412,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           setState(() {
                             paymentModeController.text = val.item!.ledgerName!;
                             selectedPaymentLedger = val.item;
+                            payLedgerId = val.item!.id;
                             paymentBalance =
                                 selectedPaymentLedger?.openingBalance ?? '';
                           });
@@ -450,40 +477,6 @@ class _CreateVoucherState extends State<CreateVoucher> {
                   image: Images.information,
                   hintText: 'Narration',
                 ),
-                if (accountHeadType == 'STU')
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: isChecked,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            isChecked = value!;
-                          });
-                        },
-                      ),
-                      SizedBox(width: 5),
-                      !isChecked
-                          ? Text("Paying Installment")
-                          : Expanded(
-                            child: TextFormField(
-                              controller: studentInstallmentController,
-                              style: TextStyle(
-                                color: AppColor.black,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                border: UnderlineInputBorder(),
-                                hintText: "Installment Number",
-                                hintStyle: TextStyle(
-                                  color: AppColor.black.withValues(alpha: .81),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                    ],
-                  ),
               ],
               context: context,
             ),
@@ -552,11 +545,11 @@ class _CreateVoucherState extends State<CreateVoucher> {
             SizedBox(height: Sizes.height * 0.05),
             Center(
               child: DefaultButton(
-                text: "Create",
+                text: voucherData == null ? "Create" : "Update",
                 hight: 40,
                 width: 150,
                 onTap: () {
-                  postVoucher([]);
+                  voucherData != null ? updateVoucher([]) : postVoucher([]);
                 },
               ),
             ),
@@ -606,6 +599,8 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'voucher_type': selectedVoucherType!,
         'voucher_date': voucherDatepicker.text.trim().toString(),
         'voucher_no': voucherNumberController.text.trim().toString(),
+        'pay_ladger_id': payLedgerId.toString(),
+        'acc_ladger_id': accLedgerId.toString(),
         'payment_mode': paymentModeController.text.toString(),
         'payment_balance': paymentBalance ?? '0',
         'account_head': accountHeadController.text.toString(),
@@ -614,8 +609,50 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'narration': narrationController.text.toString(),
         'paid_by': paidByController.text.toString(),
         'remark': remarkController.text.trim().toString(),
-        'other1': studentId,
-        'other2': studentInstallmentController.text.toString(),
+      },
+      files: files, // will be empty if no image is selected
+    );
+
+    if (response["status"] == true) {
+      showCustomSnackbarSuccess(context, response['message']);
+      Navigator.pop(context, "New Data");
+    } else {
+      showCustomSnackbarError(context, response['message']);
+    }
+  }
+
+  Future updateVoucher(List<File> images) async {
+    List<http.MultipartFile> files = [];
+
+    if (images.isNotEmpty) {
+      for (File image in images) {
+        final file = await http.MultipartFile.fromPath(
+          'upload_file[]',
+          image.path,
+        );
+        files.add(file);
+      }
+    }
+
+    final response = await ApiService.uploadMultipleFiles(
+      endpoint: 'voucher/${voucherData!.id}',
+      fields: {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'voucher_type': selectedVoucherType!,
+        'voucher_date': voucherDatepicker.text.trim().toString(),
+        'voucher_no': voucherNumberController.text.trim().toString(),
+        'pay_ladger_id': payLedgerId.toString(),
+        'acc_ladger_id': accLedgerId.toString(),
+        'payment_mode': paymentModeController.text.toString(),
+        'payment_balance': paymentBalance ?? '0',
+        'account_head': accountHeadController.text.toString(),
+        'account_balance': accountHeadBalance ?? '0',
+        'amount': amountController.text.toString(),
+        'narration': narrationController.text.toString(),
+        'paid_by': paidByController.text.toString(),
+        'remark': remarkController.text.trim().toString(),
+        '_method': "PUT",
       },
       files: files, // will be empty if no image is selected
     );

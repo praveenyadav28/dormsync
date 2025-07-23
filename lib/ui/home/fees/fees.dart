@@ -3,6 +3,7 @@ import 'package:dorm_sync/model/fees.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
+import 'package:dorm_sync/utils/date_change.dart';
 import 'package:dorm_sync/utils/decoration.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -41,7 +42,9 @@ class _FeesEntryState extends State<FeesEntry> {
   TextEditingController admissionDateController = TextEditingController();
   TextEditingController courseController = TextEditingController();
   TextEditingController fatherNameController = TextEditingController();
-
+  TextEditingController feesAsignDatepicker = TextEditingController(
+    text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
+  );
   TextEditingController miscAddNameController = TextEditingController();
 
   final FocusNode studentFocusNode = FocusNode();
@@ -100,6 +103,7 @@ class _FeesEntryState extends State<FeesEntry> {
         studentId = feesData!.hostelerId ?? "";
         studentIdController.text = feesData!.hostelerId ?? "";
         courseController.text = feesData!.courseName ?? "";
+        feesAsignDatepicker.text = feesData!.other3 ?? "";
         fatherNameController.text = feesData!.fatherName ?? "";
         _totalAmtController.text = feesData!.totalAmount ?? "";
         _totalDiscountController.text = feesData!.discount?.toString() ?? "0";
@@ -168,6 +172,8 @@ class _FeesEntryState extends State<FeesEntry> {
   }
 
   List<String> feesType = [];
+
+  String _previousText = '';
 
   void _addFeeEntry() {
     setState(() {
@@ -461,7 +467,6 @@ class _FeesEntryState extends State<FeesEntry> {
                         image: Images.year,
                         hintText: '--Admission Date--',
                       ),
-
                       Container(),
                       CommonTextFieldBorder(
                         readOnly: true,
@@ -740,6 +745,33 @@ class _FeesEntryState extends State<FeesEntry> {
                               titileText: "Total Remaining",
                               hintText: "0.0",
                             ),
+                            TitleTextField(
+                              titileText: "Fees Asign Date",
+                              image: Images.year,
+                              hintText: "--Date--",
+                              onPressIcon: () async {
+                                selectDate(context, feesAsignDatepicker).then((
+                                  onValue,
+                                ) {
+                                  setState(() {});
+                                });
+                              },
+                              controller: feesAsignDatepicker,
+                              onChanged: (val) {
+                                bool isValid = smartDateOnChanged(
+                                  value: val,
+                                  controller: feesAsignDatepicker,
+                                  previousText: _previousText,
+                                  updatePreviousText:
+                                      (newText) => _previousText = newText,
+                                );
+                                if (isValid) {
+                                  setState(
+                                    () {},
+                                  ); // Only triggers when valid date is formed
+                                }
+                              },
+                            ),
                           ],
                           context: context,
                         ),
@@ -928,7 +960,8 @@ class _FeesEntryState extends State<FeesEntry> {
       'total_remaining': _totalRemainingController.text.toString(),
       'EMI_recived': 0,
       'EMI_total': emiTotal,
-      'Other2': _aditionalDiscountController.text.toString(),
+      'other2': _aditionalDiscountController.text.toString(),
+      'other3': feesAsignDatepicker.text.toString(),
     });
 
     if (response["status"] == true) {
@@ -992,9 +1025,10 @@ class _FeesEntryState extends State<FeesEntry> {
       'total_amount': _totalAmtController.text.toString(),
       'discount': totalDiscountForApi.toStringAsFixed(2),
       'total_remaining': _totalRemainingController.text.toString(),
-      'EMI_recived': 0,
+      'EMI_recived': feesData!.emiRecived ?? 0,
       'EMI_total': emiTotal,
-      'Other2': _aditionalDiscountController.text.toString(),
+      'other2': _aditionalDiscountController.text.toString(),
+      'other3': feesAsignDatepicker.text.toString(),
       '_method': "PUT",
     });
 
