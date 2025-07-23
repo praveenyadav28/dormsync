@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:dorm_sync/model/fees_receive.dart';
 import 'package:dorm_sync/model/ledger.dart';
 import 'package:dorm_sync/model/staff.dart';
 import 'package:dorm_sync/model/voucher_model.dart';
@@ -30,7 +31,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
   VoucherModel? voucherData;
 
   String? selectedVoucherType;
-  List<LedgerList> ledgerList = [];
+  List<LedgerList> ledgerListSearch = [];
   List<StaffList> staffList = [];
 
   final TextEditingController voucherNumberController = TextEditingController();
@@ -60,8 +61,10 @@ class _CreateVoucherState extends State<CreateVoucher> {
   String _previousText = '';
 
   String? paymentBalance = '';
-  String? accountHeadBalance = '';
+  // String? accountHeadBalance = '';
   String? accountHeadType = '';
+
+  double? accountHeadBalance;
 
   int? payLedgerId;
   int? accLedgerId;
@@ -75,6 +78,10 @@ class _CreateVoucherState extends State<CreateVoucher> {
   ];
 
   bool isChecked = false;
+  //Ledger Balance
+  LedgerList? selectedAccountHead;
+  List<ReceivedListModel> feesReceiveList = [];
+  List<VoucherModel> voucherList = [];
 
   @override
   void initState() {
@@ -87,7 +94,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         voucherNumberController.text = voucherData!.voucherNo.toString();
         voucherDatepicker.text = voucherData!.voucherDate ?? "";
         accountHeadController.text = voucherData!.accountHead ?? "";
-        accountHeadBalance = voucherData!.accountBalance ?? "";
+        accountHeadBalance = double.parse(voucherData!.accountBalance ?? "0");
         paymentModeController.text = voucherData!.paymentMode ?? "";
         paymentBalance = voucherData!.paymentBalance?.toString() ?? "0";
         amountController.text = voucherData!.amount?.toString() ?? "0";
@@ -114,7 +121,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
     setState(() {
       paymentModeLedgers =
-          ledgerList
+          ledgerListSearch
               .where(
                 (ledger) =>
                     ledger.ledgerGroup == "Bank Account" ||
@@ -128,15 +135,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
     if (voucherType == "Receipt" ||
         voucherType == "Journal" ||
         voucherType == 'Payment') {
-      accountHeadLedgers = ledgerList;
+      accountHeadLedgers = ledgerListSearch;
     } else if (voucherType == "Expense") {
       accountHeadLedgers =
-          ledgerList
+          ledgerListSearch
               .where((ledger) => ledger.ledgerGroup == "Expense")
               .toList();
     } else if (voucherType == "Contra") {
       accountHeadLedgers =
-          ledgerList
+          ledgerListSearch
               .where(
                 (ledger) =>
                     ledger.ledgerGroup == "Bank Account" ||
@@ -145,7 +152,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
               .toList();
     }
     selectedAccountHeadLedger = null;
-    accountHeadBalance = '';
+    accountHeadBalance = 0;
     accountHeadType = '';
   }
 
@@ -326,11 +333,10 @@ class _CreateVoucherState extends State<CreateVoucher> {
                             accountHeadController.text = val.item!.ledgerName!;
                             accLedgerId = val.item!.id;
                             selectedAccountHeadLedger = val.item;
-                            accountHeadBalance =
-                                selectedAccountHeadLedger?.openingBalance ?? '';
                             accountHeadType =
                                 selectedAccountHeadLedger?.other1 ?? '';
                           });
+                          geLedgerData();
                           FocusScope.of(
                             context,
                           ).requestFocus(paymentModeFocusNode);
@@ -372,7 +378,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          "Balance : ₹$accountHeadBalance",
+                          "Balance : ₹${accountHeadBalance!.toStringAsFixed(2)}",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -565,7 +571,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
       "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
     );
     if (response["status"] == true) {
-      ledgerList = ledgerListFromJson(response['data']);
+      ledgerListSearch = ledgerListFromJson(response['data']);
     }
   }
 
@@ -604,7 +610,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'payment_mode': paymentModeController.text.toString(),
         'payment_balance': paymentBalance ?? '0',
         'account_head': accountHeadController.text.toString(),
-        'account_balance': accountHeadBalance ?? '0',
+        'account_balance': accountHeadBalance.toString(),
         'amount': amountController.text.toString(),
         'narration': narrationController.text.toString(),
         'paid_by': paidByController.text.toString(),
@@ -647,7 +653,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'payment_mode': paymentModeController.text.toString(),
         'payment_balance': paymentBalance ?? '0',
         'account_head': accountHeadController.text.toString(),
-        'account_balance': accountHeadBalance ?? '0',
+        'account_balance': accountHeadBalance.toString(),
         'amount': amountController.text.toString(),
         'narration': narrationController.text.toString(),
         'paid_by': paidByController.text.toString(),
@@ -667,7 +673,110 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
   Future getVoucherId() async {
     var response = await ApiService.fetchData("next-vouchere-no");
-
     voucherNumberController.text = response['next-voucher-no'].toString();
+  }
+
+  Future geLedgerData() async {
+    final response = await ApiService.fetchData(
+      'ledger_id_name?ledger_id=$accLedgerId&ledger_name=${accountHeadController.text.toString()}',
+    );
+
+    if (response["status"] == true) {
+      feesReceiveList = feesReceiveModelFromJson(
+        response['data']['Fees-Received'],
+      );
+      selectedAccountHead = ledgerListFromJson(response['data']['Ledger'])[0];
+      voucherList = voucherModelFromJson(response['data']['vouchere']);
+
+      setState(() {
+        calculateLedgerReport();
+      });
+    } else {
+      showCustomSnackbarError(context, response['message']);
+    }
+  }
+
+  void calculateLedgerReport() {
+    double currentRunningBalance =
+        double.tryParse(selectedAccountHead!.openingBalance ?? '0') ?? 0;
+
+    if ((selectedAccountHead!.openingType ?? '').toUpperCase() == 'CR') {
+      currentRunningBalance = -currentRunningBalance;
+    }
+
+    List<Map<String, dynamic>> allTransactions = [];
+
+    for (var item in feesReceiveList) {
+      allTransactions.add({
+        'date': item.date ?? '',
+        'amount': double.tryParse(item.amount ?? '0') ?? 0,
+        'role': 'Add',
+      });
+    }
+
+    for (var item in voucherList) {
+      double amount = double.tryParse(item.amount ?? '0') ?? 0;
+      String? type = item.voucherType;
+      String role = '';
+
+      bool isAccountHead =
+          (item.accountHead ?? '').trim().toLowerCase() ==
+              (selectedAccountHead!.ledgerName ?? '').trim().toLowerCase() &&
+          (item.accLedgerId ?? '') ==
+              (selectedAccountHead!.id ?? '').toString();
+
+      bool isPaymentMode =
+          (item.paymentMode ?? '').trim().toLowerCase() ==
+              (selectedAccountHead!.ledgerName ?? '').trim().toLowerCase() &&
+          (item.payLedgerId ?? '') ==
+              (selectedAccountHead!.id ?? '').toString();
+
+      if (isAccountHead) {
+        role =
+            ['Expense', 'Payment', 'Contra'].contains(type)
+                ? 'Add'
+                : 'Subtract';
+      } else if (isPaymentMode) {
+        role =
+            ['Expense', 'Payment', 'Contra'].contains(type)
+                ? 'Subtract'
+                : 'Add';
+      } else {
+        continue;
+      }
+
+      allTransactions.add({
+        'date': item.voucherDate ?? '',
+        'amount': amount,
+        'role': role,
+      });
+    }
+
+    allTransactions.sort(
+      (a, b) => parseDate(a['date']).compareTo(parseDate(b['date'])),
+    );
+
+    for (var item in allTransactions) {
+      DateTime transactionDate = parseDate(item['date']);
+      if (!transactionDate.isAfter(DateTime.now())) {
+        double amount = item['amount'];
+        if (item['role'] == 'Add') {
+          currentRunningBalance += amount;
+        } else if (item['role'] == 'Subtract') {
+          currentRunningBalance -= amount;
+        }
+      }
+    }
+
+    accountHeadBalance = currentRunningBalance;
+    setState(() {});
+  }
+
+  DateTime parseDate(String dateStr) {
+    try {
+      return DateFormat('dd/MM/yyyy').parse(dateStr);
+    } catch (_) {
+      return DateTime.tryParse(dateStr) ?? DateTime.now();
+    }
   }
 }
