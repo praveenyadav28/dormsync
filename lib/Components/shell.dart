@@ -9,7 +9,8 @@ import 'package:dorm_sync/ui/home/crm/file_info.dart';
 import 'package:dorm_sync/ui/home/crm/follow_up.dart';
 import 'package:dorm_sync/ui/home/crm/prospect.dart';
 import 'package:dorm_sync/ui/home/crm/prospect_list.dart';
-import 'package:dorm_sync/ui/home/dashboard.dart';
+import 'package:dorm_sync/ui/home/dashboard/dashboard.dart';
+import 'package:dorm_sync/ui/home/dashboard/installment.dart';
 import 'package:dorm_sync/ui/home/fees/fees.dart';
 import 'package:dorm_sync/ui/home/fees/fees_list.dart';
 import 'package:dorm_sync/ui/home/fees/fees_recieve.dart';
@@ -44,6 +45,7 @@ import 'package:dorm_sync/ui/onboarding/login.dart';
 import 'package:dorm_sync/ui/home/reports/fees_resport.dart';
 import 'package:dorm_sync/ui/home/reports/leave_report.dart';
 import 'package:dorm_sync/ui/home/reports/student_history.dart';
+import 'package:dorm_sync/ui/onboarding/splash.dart';
 import 'package:dorm_sync/ui/utilities/session.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/decoration.dart';
@@ -121,7 +123,10 @@ class _ShellState extends State<Shell> {
 
   /// Route tables per tab
   final _routes = [
-    {'/': (ctx) => const DashboardScreen()},
+    {
+      '/': (ctx) => const DashboardScreen(),
+      '/installments': (ctx) => AllInstallmentsScreen(),
+    },
     {
       '/student Report': (ctx) => const StudentHistoryList(),
       '/leave report': (ctx) => const LeaveReportList(),
@@ -252,6 +257,16 @@ class _ShellState extends State<Shell> {
                           : Image.asset(Images.dashboard),
                     ],
                   ),
+                ),
+              ),
+              SizedBox(width: 30),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IconButton(
+                  onPressed: () {
+                    pushNdRemove(SplashScreen());
+                  },
+                  icon: Icon(Icons.repeat, color: AppColor.primary),
                 ),
               ),
               Spacer(),

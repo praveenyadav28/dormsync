@@ -263,7 +263,7 @@ class _LedgerListScreenState extends State<LedgerListScreen> {
                   children: [
                     tableHeader('Ledger Name'),
                     tableHeader('Ledger Group'),
-                    tableHeader('Opening Bal.'),
+                    tableHeader('Starting Bal.'),
                     tableHeader('GST No.'),
                     tableHeader('Contact Details'),
                     tableHeader('Address'),

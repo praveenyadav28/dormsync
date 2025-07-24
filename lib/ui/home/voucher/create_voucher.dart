@@ -52,7 +52,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
   final FocusNode creditFocusNode = FocusNode();
 
   LedgerList? selectedPaymentLedger;
-  LedgerList? selectedAccountHeadLedger;
+  LedgerList? selectedLedgerLedger;
   StaffList? selectedStaff;
 
   List<LedgerList> paymentModeLedgers = [];
@@ -60,11 +60,10 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
   String _previousText = '';
 
-  String? paymentBalance = '';
-  // String? accountHeadBalance = '';
   String? accountHeadType = '';
 
   double? accountHeadBalance;
+  double? payModeBalance;
 
   int? payLedgerId;
   int? accLedgerId;
@@ -79,7 +78,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
   bool isChecked = false;
   //Ledger Balance
-  LedgerList? selectedAccountHead;
+  LedgerList? selectedLedger;
   List<ReceivedListModel> feesReceiveList = [];
   List<VoucherModel> voucherList = [];
 
@@ -96,7 +95,9 @@ class _CreateVoucherState extends State<CreateVoucher> {
         accountHeadController.text = voucherData!.accountHead ?? "";
         accountHeadBalance = double.parse(voucherData!.accountBalance ?? "0");
         paymentModeController.text = voucherData!.paymentMode ?? "";
-        paymentBalance = voucherData!.paymentBalance?.toString() ?? "0";
+        payModeBalance = double.parse(
+          voucherData!.paymentBalance?.toString() ?? "0",
+        );
         amountController.text = voucherData!.amount?.toString() ?? "0";
         narrationController.text = voucherData!.narration?.toString() ?? "0";
         paidByController.text = voucherData!.paidBy?.toString() ?? "0";
@@ -151,7 +152,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
               )
               .toList();
     }
-    selectedAccountHeadLedger = null;
+    selectedLedgerLedger = null;
     accountHeadBalance = 0;
     accountHeadType = '';
   }
@@ -332,11 +333,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           setState(() {
                             accountHeadController.text = val.item!.ledgerName!;
                             accLedgerId = val.item!.id;
-                            selectedAccountHeadLedger = val.item;
+                            selectedLedgerLedger = val.item;
                             accountHeadType =
-                                selectedAccountHeadLedger?.other1 ?? '';
+                                selectedLedgerLedger?.other1 ?? '';
                           });
-                          geLedgerData();
+                          if (accountHeadType != "STU") {
+                            geLedgerData(true);
+                          } else {
+                            accountHeadBalance = 0;
+                          }
                           FocusScope.of(
                             context,
                           ).requestFocus(paymentModeFocusNode);
@@ -366,7 +371,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                     ),
                   ],
                 ),
-                accountHeadBalance != null
+                accountHeadBalance != null && accountHeadType != "STU"
                     ? Center(
                       child: Container(
                         height: 50,
@@ -419,8 +424,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                             paymentModeController.text = val.item!.ledgerName!;
                             selectedPaymentLedger = val.item;
                             payLedgerId = val.item!.id;
-                            paymentBalance =
-                                selectedPaymentLedger?.openingBalance ?? '';
+                            geLedgerData(false);
                           });
                           if (selectedVoucherType == 'Journal') {
                             FocusScope.of(context).requestFocus(debitFocusNode);
@@ -446,7 +450,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                     ),
                   ],
                 ),
-                paymentBalance != null
+                payModeBalance != null
                     ? Center(
                       child: Container(
                         height: 50,
@@ -458,7 +462,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          "Balance : ₹$paymentBalance",
+                          "Balance : ₹${payModeBalance!.toStringAsFixed(2)}",
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -608,7 +612,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'pay_ladger_id': payLedgerId.toString(),
         'acc_ladger_id': accLedgerId.toString(),
         'payment_mode': paymentModeController.text.toString(),
-        'payment_balance': paymentBalance ?? '0',
+        'payment_balance': payModeBalance.toString(),
         'account_head': accountHeadController.text.toString(),
         'account_balance': accountHeadBalance.toString(),
         'amount': amountController.text.toString(),
@@ -651,7 +655,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'pay_ladger_id': payLedgerId.toString(),
         'acc_ladger_id': accLedgerId.toString(),
         'payment_mode': paymentModeController.text.toString(),
-        'payment_balance': paymentBalance ?? '0',
+        'payment_balance': payModeBalance.toString(),
         'account_head': accountHeadController.text.toString(),
         'account_balance': accountHeadBalance.toString(),
         'amount': amountController.text.toString(),
@@ -676,31 +680,29 @@ class _CreateVoucherState extends State<CreateVoucher> {
     voucherNumberController.text = response['next-voucher-no'].toString();
   }
 
-  Future geLedgerData() async {
+  Future geLedgerData(bool isAccountHead) async {
     final response = await ApiService.fetchData(
-      'ledger_id_name?ledger_id=$accLedgerId&ledger_name=${accountHeadController.text.toString()}',
+      'ledger_id_name?ledger_id=${isAccountHead ? accLedgerId : payLedgerId}&ledger_name=${isAccountHead ? accountHeadController.text.trim() : paymentModeController.text.trim()}',
     );
 
     if (response["status"] == true) {
       feesReceiveList = feesReceiveModelFromJson(
         response['data']['Fees-Received'],
       );
-      selectedAccountHead = ledgerListFromJson(response['data']['Ledger'])[0];
+      selectedLedger = ledgerListFromJson(response['data']['Ledger'])[0];
       voucherList = voucherModelFromJson(response['data']['vouchere']);
 
-      setState(() {
-        calculateLedgerReport();
-      });
+      calculateLedgerReport(isAccountHead);
     } else {
       showCustomSnackbarError(context, response['message']);
     }
   }
 
-  void calculateLedgerReport() {
+  void calculateLedgerReport(bool isAccountHead) {
     double currentRunningBalance =
-        double.tryParse(selectedAccountHead!.openingBalance ?? '0') ?? 0;
+        double.tryParse(selectedLedger?.openingBalance ?? '0') ?? 0;
 
-    if ((selectedAccountHead!.openingType ?? '').toUpperCase() == 'CR') {
+    if ((selectedLedger?.openingType ?? '').toUpperCase() == 'CR') {
       currentRunningBalance = -currentRunningBalance;
     }
 
@@ -719,24 +721,22 @@ class _CreateVoucherState extends State<CreateVoucher> {
       String? type = item.voucherType;
       String role = '';
 
-      bool isAccountHead =
+      bool isAccountHeadMatch =
           (item.accountHead ?? '').trim().toLowerCase() ==
-              (selectedAccountHead!.ledgerName ?? '').trim().toLowerCase() &&
-          (item.accLedgerId ?? '') ==
-              (selectedAccountHead!.id ?? '').toString();
+              (selectedLedger?.ledgerName ?? '').trim().toLowerCase() &&
+          (item.accLedgerId ?? '') == (selectedLedger?.id ?? '').toString();
 
-      bool isPaymentMode =
+      bool isPaymentModeMatch =
           (item.paymentMode ?? '').trim().toLowerCase() ==
-              (selectedAccountHead!.ledgerName ?? '').trim().toLowerCase() &&
-          (item.payLedgerId ?? '') ==
-              (selectedAccountHead!.id ?? '').toString();
+              (selectedLedger?.ledgerName ?? '').trim().toLowerCase() &&
+          (item.payLedgerId ?? '') == (selectedLedger?.id ?? '').toString();
 
-      if (isAccountHead) {
+      if (isAccountHeadMatch) {
         role =
             ['Expense', 'Payment', 'Contra'].contains(type)
                 ? 'Add'
                 : 'Subtract';
-      } else if (isPaymentMode) {
+      } else if (isPaymentModeMatch) {
         role =
             ['Expense', 'Payment', 'Contra'].contains(type)
                 ? 'Subtract'
@@ -768,7 +768,12 @@ class _CreateVoucherState extends State<CreateVoucher> {
       }
     }
 
-    accountHeadBalance = currentRunningBalance;
+    if (isAccountHead) {
+      accountHeadBalance = currentRunningBalance;
+    } else {
+      payModeBalance = currentRunningBalance;
+    }
+
     setState(() {});
   }
 

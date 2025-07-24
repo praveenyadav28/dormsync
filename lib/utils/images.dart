@@ -57,6 +57,10 @@ class Images {
 
   static var to = "${iconBaseUrl}To.png";
 
+  static var roomVacancy = "${iconBaseUrl}room_vacancy.png";
+  static var activeHostler = "${iconBaseUrl}active_hostler.png";
+  static var roomscount = "${iconBaseUrl}roomcount.png";
+
   //Hosteler
   static var hostelerBaseUrl = 'assets/hosteler/';
   static var hosteler = "${hostelerBaseUrl}hosteler.png";

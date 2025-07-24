@@ -90,7 +90,7 @@ class _LedgerReportScreenState extends State<LedgerReportScreen> {
     for (var item in widget.voucherList) {
       double amount = double.tryParse(item.amount ?? '0') ?? 0;
       String? type = item.voucherType;
-      String role = '';
+      // String role = '';
       String action = '';
       String paymentMode = item.paymentMode ?? '-';
 
@@ -105,14 +105,14 @@ class _LedgerReportScreenState extends State<LedgerReportScreen> {
           (item.payLedgerId ?? '') == (widget.ledger.id ?? '').toString();
 
       if (isAccountHead) {
-        role = 'Account Head';
+        // role = 'Account Head';
         // Cr: receiving money
         action =
             ['Expense', 'Payment', 'Contra'].contains(type)
                 ? 'Add'
                 : 'Subtract';
       } else if (isPaymentMode) {
-        role = 'Payment Mode';
+        // role = 'Payment Mode';
         // Dr: paying out money
         action =
             ['Expense', 'Payment', 'Contra'].contains(type)

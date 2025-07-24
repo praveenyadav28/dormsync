@@ -7,7 +7,6 @@ import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
 import 'package:dorm_sync/utils/images.dart';
-import 'package:dorm_sync/utils/navigations.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
