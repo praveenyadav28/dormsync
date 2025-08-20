@@ -354,7 +354,7 @@ class _ReactivatedListScreenState extends State<ReactivatedListScreen> {
 
   Future getActivatedList() async {
     var response = await ApiService.fetchData(
-      "reactivate?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "reactivate?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       activeteList = activatedListFromJson(response['data']);

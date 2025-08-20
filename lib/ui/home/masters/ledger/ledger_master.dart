@@ -54,43 +54,43 @@ class _CreateLedgerState extends State<CreateLedger> {
     if (args != null && ledgerData == null) {
       ledgerData = args as LedgerList;
 
-      _selectedTitle = ledgerData?.title! ?? "";
-      _selectedsubTitle = ledgerData?.relationType! ?? "";
-      _selectedLedgerGroup = ledgerData?.ledgerGroup! ?? "";
-      _selectedClosingBalance = ledgerData?.openingType! ?? "";
-      _selectedBalance = ledgerData?.other5 ?? "";
-      ledgerNameController.text = ledgerData!.ledgerName ?? "";
-      fatherNameController.text = ledgerData!.name ?? "";
-      contactNoNameController.text = ledgerData!.contactNo ?? "";
-      emailIdController.text = ledgerData!.email ?? "";
-      whatsapppNoController.text = ledgerData!.whatsappNo ?? "";
-      gstNoController.text = ledgerData!.gstNo ?? "";
-      closingBalanceController.text = ledgerData!.closingBalance ?? "";
-      openingBalanceController.text = ledgerData!.openingBalance ?? "";
-      aadharNoController.text = ledgerData!.aadharNo ?? "";
-      permanentAddressController.text = ledgerData!.permanentAddress ?? "";
-      permanentareaController.text = ledgerData!.cityTownVillage ?? "";
-      permanentpinCodeController.text = ledgerData!.pinCode ?? "";
-      temporaryAddressController.text = ledgerData!.temporaryAddress ?? "";
-      temporaryareaController.text = ledgerData!.tcityTownVillage ?? "";
-      temporarypinCodeController.text = ledgerData!.tpinCode ?? "";
+      _selectedTitle = ledgerData?.title ?? "";
+      _selectedsubTitle = ledgerData?.relationType ?? "";
+      _selectedLedgerGroup = ledgerData?.ledgerGroup ?? "";
+      _selectedClosingBalance = ledgerData?.openingType ?? "Dr";
+      _selectedBalance = ledgerData?.openingType ?? "Dr";
+      ledgerNameController.text = ledgerData?.ledgerName ?? "";
+      fatherNameController.text = ledgerData?.name ?? "";
+      contactNoNameController.text = ledgerData?.contactNo ?? "";
+      emailIdController.text = ledgerData?.email ?? "";
+      whatsapppNoController.text = ledgerData?.whatsappNo ?? "";
+      gstNoController.text = ledgerData?.gstNo ?? "";
+      closingBalanceController.text = ledgerData?.closingBalance ?? "";
+      openingBalanceController.text = ledgerData?.openingBalance ?? "";
+      aadharNoController.text = ledgerData?.aadharNo ?? "";
+      permanentAddressController.text = ledgerData?.permanentAddress ?? "";
+      permanentareaController.text = ledgerData?.cityTownVillage ?? "";
+      permanentpinCodeController.text = ledgerData?.pinCode ?? "";
+      temporaryAddressController.text = ledgerData?.temporaryAddress ?? "";
+      temporaryareaController.text = ledgerData?.tcityTownVillage ?? "";
+      temporarypinCodeController.text = ledgerData?.tpinCode ?? "";
       selectedState = SearchFieldListItem<String>(
-        ledgerData!.state ?? "",
-        item: ledgerData!.state ?? "",
+        ledgerData?.state ?? "",
+        item: ledgerData?.state ?? "",
       );
       selectedCity = SearchFieldListItem<String>(
-        ledgerData!.city ?? "",
-        item: ledgerData!.city ?? "",
+        ledgerData?.city ?? "",
+        item: ledgerData?.city ?? "",
       );
       stateController.text = selectedState?.searchKey ?? '';
       cityController.text = selectedCity?.searchKey ?? '';
       selectedStateTemp = SearchFieldListItem<String>(
-        ledgerData!.tstate ?? "",
-        item: ledgerData!.tstate ?? "",
+        ledgerData?.tstate ?? "",
+        item: ledgerData?.tstate ?? "",
       );
       selectedCityTemp = SearchFieldListItem<String>(
-        ledgerData!.tcity ?? "",
-        item: ledgerData!.tcity ?? "",
+        ledgerData?.tcity ?? "",
+        item: ledgerData?.tcity ?? "",
       );
       tempSateController.text = selectedStateTemp?.searchKey ?? '';
       tempCityController.text = selectedCityTemp?.searchKey ?? '';

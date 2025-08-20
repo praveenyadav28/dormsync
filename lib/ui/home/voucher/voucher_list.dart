@@ -266,7 +266,7 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                     tableHeader('Account Head'),
                     tableHeader('Voucher Mode'),
                     tableHeader('Transaction Amt'),
-                    tableHeader('Paid By'),
+                    tableHeader('Payment Mode'),
                     tableHeader('Narration'),
                     tableHeader('Action'),
                   ],
@@ -282,7 +282,7 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                       tableBody(voucher.accountHead ?? ''),
                       tableBody(voucher.voucherType ?? ''),
                       tableBody(voucher.amount ?? ''),
-                      tableBody(voucher.paidBy),
+                      tableBody(voucher.paymentMode),
                       tableBody(voucher.narration),
                       TableCell(
                         child: Padding(
@@ -397,7 +397,7 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
 
   Future getVouchers() async {
     var response = await ApiService.fetchData(
-      "voucher?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "voucher?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     voucherList = voucherModelFromJson(response['data']);
   }

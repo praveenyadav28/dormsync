@@ -71,7 +71,9 @@ class _FeesReportListState extends State<FeesReportList> {
   }
 
   Future<void> getBuildings() async {
-    final response = await ApiService.fetchData('building');
+    final response = await ApiService.fetchData(
+      'building?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       buildings = List<Map<String, dynamic>>.from(response["data"]);
       buildingMap = {for (var b in buildings) b['id']: b['building']};
@@ -79,7 +81,9 @@ class _FeesReportListState extends State<FeesReportList> {
   }
 
   Future<void> getFloors() async {
-    final response = await ApiService.fetchData('floor');
+    final response = await ApiService.fetchData(
+      'floor?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       floors = List<Map<String, dynamic>>.from(response["data"]);
       floorMap = {for (var f in floors) f['id']: f['floor']};
@@ -88,7 +92,7 @@ class _FeesReportListState extends State<FeesReportList> {
 
   Future<void> getStudentList() async {
     final response = await ApiService.fetchData(
-      "getCombinedData/${Preference.getString(PrefKeys.licenseNo)}/${Preference.getint(PrefKeys.locationId)}/${Preference.getint(PrefKeys.sessionId)}",
+      "getCombinedData/${Preference.getString(PrefKeys.licenseNo)}/${Preference.getint(PrefKeys.locationId)}/${Preference.getint(PrefKeys.sessionId)}?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentReportList = feesReportModelFromJson(response['data']);

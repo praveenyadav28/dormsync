@@ -229,7 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 SizedBox(width: 20),
-                if (flattenedInstallments.isNotEmpty) ...[
+                ...[
                   Expanded(
                     flex: 7,
                     child: Card(
@@ -283,52 +283,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               height: 290,
                               child: SingleChildScrollView(
                                 // scrollDirection: Axis.horizontal,
-                                child: Stack(
-                                  children: [
-                                    DataTable(
-                                      columns: const [
-                                        DataColumn(label: Text("Hosteler")),
-                                        DataColumn(label: Text("Father")),
-                                        DataColumn(
-                                          label: Text("Installment Date"),
-                                        ),
-                                        DataColumn(
-                                          label: Text("Installment Price"),
-                                        ),
-                                      ],
+                                child:
+                                    flattenedInstallments.isEmpty
+                                        ? Container()
+                                        : DataTable(
+                                          columns: const [
+                                            DataColumn(label: Text("Hosteler")),
+                                            DataColumn(label: Text("Father")),
+                                            DataColumn(
+                                              label: Text("Installment Date"),
+                                            ),
+                                            DataColumn(
+                                              label: Text("Installment Price"),
+                                            ),
+                                          ],
 
-                                      rows:
-                                          flattenedInstallments.map((data) {
-                                            return DataRow(
-                                              cells: [
-                                                DataCell(
-                                                  Text(
-                                                    data["hostelerName"] ?? '',
-                                                  ),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                    data["fatherName"] ?? '',
-                                                  ),
-                                                ),
+                                          rows:
+                                              flattenedInstallments.map((data) {
+                                                return DataRow(
+                                                  cells: [
+                                                    DataCell(
+                                                      Text(
+                                                        data["hostelerName"] ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        data["fatherName"] ??
+                                                            '',
+                                                      ),
+                                                    ),
 
-                                                DataCell(
-                                                  Text(
-                                                    data["installmentDate"] ??
-                                                        '',
-                                                  ),
-                                                ),
-                                                DataCell(
-                                                  Text(
-                                                    "₹${data["installmentPrice"]?.toStringAsFixed(2) ?? '0.00'}",
-                                                  ),
-                                                ),
-                                              ],
-                                            );
-                                          }).toList(),
-                                    ),
-                                  ],
-                                ),
+                                                    DataCell(
+                                                      Text(
+                                                        data["installmentDate"] ??
+                                                            '',
+                                                      ),
+                                                    ),
+                                                    DataCell(
+                                                      Text(
+                                                        "₹${data["installmentPrice"]?.toStringAsFixed(2) ?? '0.00'}",
+                                                      ),
+                                                    ),
+                                                  ],
+                                                );
+                                              }).toList(),
+                                        ),
                               ),
                             ),
                           ],
@@ -396,7 +397,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> getHostlersLength() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       final total = response["data"].length;
@@ -410,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> getStaffLength() async {
     var response = await ApiService.fetchData(
-      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       setState(() {
@@ -421,7 +422,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> getTotalVacancy() async {
     var response = await ApiService.fetchData(
-      "bade_occupants?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "bade_occupants?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       setState(() {
@@ -435,10 +436,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final sessionId = Preference.getint(PrefKeys.sessionId);
 
     final feesResponse = await ApiService.fetchData(
-      "fees_isactive?session_id=$sessionId",
+      "fees_isactive?session_id=$sessionId&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     final receiveResponse = await ApiService.fetchData(
-      "fees_received?session_id=$sessionId",
+      "fees_received?session_id=$sessionId&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (feesResponse["status"] == true && receiveResponse["status"] == true) {
       feesList = feesListFromJson(feesResponse['data']);
@@ -506,7 +507,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> getRooms() async {
-    final response = await ApiService.fetchData('room');
+    final response = await ApiService.fetchData(
+      'room?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         List<Map<String, dynamic>> rooms = List<Map<String, dynamic>>.from(

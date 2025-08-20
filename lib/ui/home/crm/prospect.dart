@@ -39,14 +39,12 @@ class _ProspectCRMState extends State<ProspectCRM> {
       remarkController.text = prospectData!.remark ?? "";
       fatherNameController.text = prospectData!.fatherName ?? "";
       fContactNoController.text = prospectData!.fContactNo ?? "";
-      appointmentDatepicker.text = DateFormat(
-        'dd/MM/yyyy',
-      ).format(prospectData!.nextAppointmentDate ?? DateTime.now());
+      prospectDatepicker.text = prospectData!.prospectDate!;
+      appointmentDatepicker.text = prospectData!.nextAppointmentDate!;
       appointmentTimePicker = TimeOfDay(
         hour: int.parse(prospectData!.time!.split(":")[0]),
         minute: int.parse(prospectData!.time!.split(":")[1]),
       );
-
       selectedState = SearchFieldListItem<String>(
         prospectData!.state ?? "",
         item: prospectData!.state ?? "",
@@ -92,6 +90,9 @@ class _ProspectCRMState extends State<ProspectCRM> {
     }
   }
 
+  TextEditingController prospectDatepicker = TextEditingController(
+    text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
+  );
   TextEditingController appointmentDatepicker = TextEditingController(
     text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
   );
@@ -501,6 +502,7 @@ class _ProspectCRMState extends State<ProspectCRM> {
       'licence_no': Preference.getString(PrefKeys.licenseNo),
       'branch_id': Preference.getint(PrefKeys.locationId).toString(),
       'student_name': studentNameController.text.trim().toString(),
+      'prospect_date': prospectDatepicker.text.trim().toString(),
       'gender': _selectedGender,
       'contact_no': contactNoController.text.trim().toString(),
       'father_name': fatherNameController.text.trim().toString(),
@@ -524,24 +526,28 @@ class _ProspectCRMState extends State<ProspectCRM> {
   }
 
   Future updateProspect() async {
-    final response = await ApiService.postData('prospect/${prospectData!.id}', {
-      'licence_no': Preference.getString(PrefKeys.licenseNo),
-      'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-      'student_name': studentNameController.text.trim().toString(),
-      'gender': _selectedGender,
-      'contact_no': contactNoController.text.trim().toString(),
-      'father_name': fatherNameController.text.trim().toString(),
-      'f_contact_no': fContactNoController.text.trim().toString(),
-      'address': addressController.text.trim().toString(),
-      'staff': _selectedStaff,
-      'next_appointment_date': appointmentDatepicker.text.trim().toString(),
-      'time': appointmentTimePicker.format(context),
-      'remark': remarkController.text.trim().toString(),
-      'city': selectedCity?.item ?? "",
-      'state': selectedState?.item ?? "",
-      'prospect_status': "${prospectData!.prospectStatus}",
-      '_method': "PUT",
-    });
+    final response = await ApiService.postData(
+      'prospect/${prospectData!.id}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'student_name': studentNameController.text.trim().toString(),
+        'prospect_date': prospectDatepicker.text.trim().toString(),
+        'gender': _selectedGender,
+        'contact_no': contactNoController.text.trim().toString(),
+        'father_name': fatherNameController.text.trim().toString(),
+        'f_contact_no': fContactNoController.text.trim().toString(),
+        'address': addressController.text.trim().toString(),
+        'staff': _selectedStaff,
+        'next_appointment_date': appointmentDatepicker.text.trim().toString(),
+        'time': appointmentTimePicker.format(context),
+        'remark': remarkController.text.trim().toString(),
+        'city': selectedCity?.item ?? "",
+        'state': selectedState?.item ?? "",
+        'prospect_status': "${prospectData!.prospectStatus}",
+        '_method': "PUT",
+      },
+    );
 
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
@@ -554,7 +560,7 @@ class _ProspectCRMState extends State<ProspectCRM> {
 
   Future getStaff() async {
     var response = await ApiService.fetchData(
-      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       List<dynamic> data = response["data"];

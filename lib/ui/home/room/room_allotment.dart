@@ -51,7 +51,9 @@ class _RoomAllotmentState extends State<RoomAllotment> {
   }
 
   Future<void> getBuildings() async {
-    final response = await ApiService.fetchData('building');
+    final response = await ApiService.fetchData(
+      'building?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         buildings = List<Map<String, dynamic>>.from(response["data"]);
@@ -66,7 +68,9 @@ class _RoomAllotmentState extends State<RoomAllotment> {
   }
 
   Future<void> getFloors() async {
-    final response = await ApiService.fetchData('floor');
+    final response = await ApiService.fetchData(
+      'floor?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         floors = List<Map<String, dynamic>>.from(response["data"]);
@@ -81,7 +85,9 @@ class _RoomAllotmentState extends State<RoomAllotment> {
   }
 
   Future<void> getRooms() async {
-    final response = await ApiService.fetchData('room');
+    final response = await ApiService.fetchData(
+      'room?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         roomNoController.clear();
@@ -246,7 +252,7 @@ class _RoomAllotmentState extends State<RoomAllotment> {
             Row(
               children: [
                 SizedBox(
-                  width: Sizes.width * .7,
+                  width: Sizes.width * .68,
                   height: 35,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -361,11 +367,12 @@ class _RoomAllotmentState extends State<RoomAllotment> {
                       RichText(
                         text: TextSpan(
                           text: 'Total Capacity  :  ',
-                          style: TextStyle(color: AppColor.black),
+                          style: TextStyle(color: AppColor.black, fontSize: 16),
                           children: <TextSpan>[
                             TextSpan(
                               text: '$totalBeds',
                               style: TextStyle(
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: AppColor.black,
                               ),
@@ -376,12 +383,13 @@ class _RoomAllotmentState extends State<RoomAllotment> {
                       RichText(
                         text: TextSpan(
                           text: 'Vacancy  :  ',
-                          style: TextStyle(color: AppColor.black),
+                          style: TextStyle(color: AppColor.black, fontSize: 16),
                           children: <TextSpan>[
                             TextSpan(
                               text: '${totalBeds - totalVacency}',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
+                                fontSize: 16,
                                 color: AppColor.black,
                               ),
                             ),
@@ -503,7 +511,7 @@ class _RoomAllotmentState extends State<RoomAllotment> {
                                       );
                                     },
                             style: OutlinedButton.styleFrom(
-                              backgroundColor: AppColor.background,
+                              backgroundColor: AppColor.black.withOpacity(0.1),
                               side: BorderSide(
                                 color: AppColor.black.withOpacity(0.4),
                               ),
@@ -514,7 +522,10 @@ class _RoomAllotmentState extends State<RoomAllotment> {
                             ),
                             child: Text(
                               '+ Add Floor',
-                              style: TextStyle(color: AppColor.black),
+                              style: TextStyle(
+                                color: AppColor.black,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),

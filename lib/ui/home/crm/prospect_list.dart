@@ -449,11 +449,7 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
                       tableBody(item.studentName ?? ''),
                       tableBody("📞 ${item.contactNo}\n🏡 ${item.fContactNo}"),
                       tableBody(item.address ?? ''),
-                      tableBody(
-                        DateFormat(
-                          'dd/MM/yyyy',
-                        ).format(item.nextAppointmentDate ?? DateTime.now()),
-                      ),
+                      tableBody(item.nextAppointmentDate),
                       tableBody(item.remark ?? ''),
                       TableCell(
                         child: Padding(
@@ -592,7 +588,7 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
 
   Future getProspect() async {
     var response = await ApiService.fetchData(
-      "prospect?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "prospect?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       List<ProspectList> allProspects = prospectListFromJson(response['data']);
@@ -616,8 +612,8 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
   Future getallprospactGrid() async {
     Map<String, dynamic> response =
         await ApiService.postData("createdAtReport", {
-          "from_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-          "to_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          "from_date": DateFormat('dd/MM/yyyy').format(DateTime.now()),
+          "to_date": DateFormat('dd/MM/yyyy').format(DateTime.now()),
           "licence_no": Preference.getString(PrefKeys.licenseNo),
           "branch_id": Preference.getint(PrefKeys.locationId),
         });
@@ -632,10 +628,10 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
     Map<String, dynamic> responsetommarow =
         await ApiService.postData("report", {
           "from_date": DateFormat(
-            'yyyy-MM-dd',
+            'dd/MM/yyyy',
           ).format(DateTime.now().add(Duration(days: 1))),
           "to_date": DateFormat(
-            'yyyy-MM-dd',
+            'dd/MM/yyyy',
           ).format(DateTime.now().add(Duration(days: 1))),
           "licence_no": Preference.getString(PrefKeys.licenseNo),
           "branch_id": Preference.getint(PrefKeys.locationId),
@@ -650,8 +646,8 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
             .length;
 
     Map<String, dynamic> responseToday = await ApiService.postData("report", {
-      "from_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
-      "to_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+      "from_date": DateFormat('dd/MM/yyyy').format(DateTime.now()),
+      "to_date": DateFormat("dd/MM/yyyy").format(DateTime.now()),
       "licence_no": Preference.getString(PrefKeys.licenseNo),
       "branch_id": Preference.getint(PrefKeys.locationId),
     });
@@ -667,9 +663,9 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
     Map<String, dynamic> responseWeekly =
         await ApiService.postData("createdAtReport", {
           "from_date": DateFormat(
-            'yyyy-MM-dd',
+            "dd/MM/yyyy",
           ).format(DateTime.now().subtract(Duration(days: 7))),
-          "to_date": DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          "to_date": DateFormat("dd/MM/yyyy").format(DateTime.now()),
           "licence_no": Preference.getString(PrefKeys.licenseNo),
           "branch_id": Preference.getint(PrefKeys.locationId),
         });

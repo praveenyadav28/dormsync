@@ -1,4 +1,5 @@
 import 'package:dorm_sync/Components/shell.dart';
+import 'package:dorm_sync/model/branches.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
@@ -25,8 +26,8 @@ class _LoginScreenState extends State<LoginScreen> {
   TextEditingController userIdController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
-  String? _selectedBranch;
-  final List<String> _branchList = [];
+  BranchList? _selectedBranch;
+  final List<BranchList> _branchList = [];
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Image.asset(Images.town, height: 30),
                             SizedBox(width: 5),
                             Expanded(
-                              child: DropdownButtonFormField<String>(
+                              child: DropdownButtonFormField<BranchList>(
                                 value: _selectedBranch,
                                 icon: Icon(
                                   Icons.keyboard_arrow_down,
@@ -190,15 +191,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   });
                                 },
                                 items:
-                                    _branchList.map((caste) {
+                                    _branchList.map((branch) {
                                       return DropdownMenuItem(
-                                        value: caste,
+                                        value: branch,
                                         child: Text(
-                                          caste,
+                                          branch.branchName ?? "",
                                           style: TextStyle(
                                             color: AppColor.black,
                                             fontWeight: FontWeight.w500,
-                                            // height: 2,
                                           ),
                                         ),
                                       );
@@ -285,33 +285,34 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future getBranchList() async {
-    var response = await ApiService.postDataBeforeLogin(
-      'get-branches-by-licence',
-      {'licence_no': licenceNoController.text.trim().toString()},
+    var response = await ApiService.fetchData(
+      "branch?licence_no=${licenceNoController.text.trim()}",
     );
     if (response['status'] == true && response['branches'] != null) {
       final branches = response['branches'] as List;
       _branchList.clear();
       _selectedBranch = null;
-      _branchList.addAll(branches.map((b) => b['branch_name'].toString()));
-      showCustomSnackbarSuccess(context, response['message']);
+      _branchList.addAll(branches.map((b) => BranchList.fromJson(b)));
+      showCustomSnackbarSuccess(context, "Branch fetched successfully");
     } else {
-      showCustomSnackbarError(context, response['message']);
+      showCustomSnackbarError(context, "Unable to find branch");
     }
   }
 
   Future postLogin() async {
-    var response = await ApiService.postData('login', {
+    var response = await ApiService.postData('tenant/login', {
       'licence_no': licenceNoController.text.trim().toString(),
-      'branch_name': _selectedBranch,
+      'branch_id': _selectedBranch?.id,
       'username': userIdController.text.trim().toString(),
       'password': passwordController.text.trim().toString(),
     });
     if (response["status"] == true) {
-      print(response);
       Preference.setBool(PrefKeys.userstatus, saveLogin);
       Preference.setString(PrefKeys.token, response['token']);
-      Preference.setString(PrefKeys.licenseNo, response['user']['licence_no']);
+      Preference.setString(
+        PrefKeys.licenseNo,
+        licenceNoController.text.trim().toString(),
+      );
       Preference.setString(
         PrefKeys.coludIdHostel,
         response['branch']['other2'] ?? "",
@@ -331,7 +332,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> fetchAndSaveActiveSessionId() async {
-    var response = await ApiService.fetchData("session");
+    var response = await ApiService.fetchData(
+      "session?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${_selectedBranch!.id}",
+    );
     if (response["status"] == true) {
       List sessions = response['data'];
       for (var session in sessions) {

@@ -4,6 +4,7 @@ import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
 import 'package:dorm_sync/utils/images.dart';
+import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/reuse.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
@@ -265,7 +266,7 @@ class _LeaveReportListState extends State<LeaveReportList> {
 
   Future getLeaveList() async {
     var response = await ApiService.fetchData(
-      "createat/?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}",
+      "createat/?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       leaveList = leaveListFromJson(response['data']);

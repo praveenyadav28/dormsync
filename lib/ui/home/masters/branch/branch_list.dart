@@ -282,8 +282,8 @@ class _BranchListScreenState extends State<BranchListScreen> {
                       tableBody(item.bAddress ?? ''),
                       tableBody(item.bCity ?? ''),
                       tableBody(item.bState ?? ''),
-                      tableBody(item.user!.username ?? ''),
-                      tableBody(item.user!.password ?? ''),
+                      tableBody(item.user?[0].username ?? ''),
+                      tableBody(item.user?[0].password ?? ''),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),

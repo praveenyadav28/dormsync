@@ -300,7 +300,7 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
                                 onPressed: () async {
                                   var updatedData = await Navigator.of(
                                     context,
-                                  ).pushNamed('/add Hostler', arguments: item);
+                                  ).pushNamed('/add Leave', arguments: item);
                                   if (updatedData == "New Data") {
                                     getLeaveList().then((value) {
                                       setState(() {});
@@ -400,7 +400,7 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
 
   Future getLeaveList() async {
     var response = await ApiService.fetchData(
-      "leave_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "leave_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       leaveList = leaveListFromJson(response['data']);

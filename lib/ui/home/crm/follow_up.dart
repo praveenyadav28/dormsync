@@ -73,9 +73,7 @@ class _FollowUpCRMState extends State<FollowUpCRM> {
         fatherNameController.text = prospectData!.fatherName ?? "";
         fContactNoController.text = prospectData!.fContactNo ?? "";
         _selectedStatus = prospectData!.prospectStatus ?? "";
-        appointmentDatepicker.text = DateFormat(
-          'dd/MM/yyyy',
-        ).format(prospectData!.nextAppointmentDate ?? DateTime.now());
+        appointmentDatepicker.text = prospectData!.nextAppointmentDate!;
         appointmentTimePicker = TimeOfDay(
           hour: int.parse(prospectData!.time!.split(":")[0]),
           minute: int.parse(prospectData!.time!.split(":")[1]),
@@ -425,24 +423,26 @@ class _FollowUpCRMState extends State<FollowUpCRM> {
   }
 
   Future postFollowUp() async {
-    final response =
-        await ApiService.postData('prospect/${prospectData!.id}/follow-up', {
-          'licence_no': Preference.getString(PrefKeys.licenseNo),
-          'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-          'student_name': studentNameController.text.trim().toString(),
-          'gender': genderController.text.trim().toString(),
-          'contact_no': contactNoController.text.trim().toString(),
-          'father_name': fatherNameController.text.trim().toString(),
-          'f_contact_no': fContactNoController.text.trim().toString(),
-          'address': addressController.text.trim().toString(),
-          'staff': staffController.text.toString(),
-          'next_appointment_date': appointmentDatepicker.text.trim().toString(),
-          'time': appointmentTimePicker.format(context),
-          'remark': remarkController.text.trim().toString(),
-          'city': cityController.text.trim().toString(),
-          'state': stateController.text.trim().toString(),
-          'prospect_status': _selectedStatus,
-        });
+    final response = await ApiService.postData(
+      'prospect/${prospectData!.id}/follow-up?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'student_name': studentNameController.text.trim().toString(),
+        'gender': genderController.text.trim().toString(),
+        'contact_no': contactNoController.text.trim().toString(),
+        'father_name': fatherNameController.text.trim().toString(),
+        'f_contact_no': fContactNoController.text.trim().toString(),
+        'address': addressController.text.trim().toString(),
+        'staff': staffController.text.toString(),
+        'next_appointment_date': appointmentDatepicker.text.trim().toString(),
+        'time': appointmentTimePicker.format(context),
+        'remark': remarkController.text.trim().toString(),
+        'city': cityController.text.trim().toString(),
+        'state': stateController.text.trim().toString(),
+        'prospect_status': _selectedStatus,
+      },
+    );
 
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
@@ -453,7 +453,9 @@ class _FollowUpCRMState extends State<FollowUpCRM> {
   }
 
   Future getFollowUpRecord(int id) async {
-    var response = await ApiService.fetchData("prospect/history/$id");
+    var response = await ApiService.fetchData(
+      "prospect/history/$id?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       followUpList = List<ProspectHistory>.from(
         response['data'].map((x) => ProspectHistory.fromJson(x)),

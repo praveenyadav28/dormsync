@@ -1022,7 +1022,9 @@ class _CreateHostelersState extends State<CreateHostelers> {
   }
 
   Future getStudentId() async {
-    var response = await ApiService.fetchData("next-student-id");
+    var response = await ApiService.fetchData(
+      "next-student-id?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
 
     studentIdController.text =
         admissionData != null
@@ -1032,7 +1034,7 @@ class _CreateHostelersState extends State<CreateHostelers> {
 
   Future getStudentDetails() async {
     var response = await ApiService.fetchData(
-      "contect/student?student_name=${studentNameController.text}&primary_contact_no=${contactNoController.text}",
+      "contect/student?student_name=${studentNameController.text}&primary_contact_no=${contactNoController.text}?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       await showDialog(

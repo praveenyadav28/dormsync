@@ -107,17 +107,11 @@ class _LedgerReportScreenState extends State<LedgerReportScreen> {
       if (isAccountHead) {
         // role = 'Account Head';
         // Cr: receiving money
-        action =
-            ['Expense', 'Payment', 'Contra'].contains(type)
-                ? 'Add'
-                : 'Subtract';
+        action = ['Expense', 'Payment'].contains(type) ? 'Add' : 'Subtract';
       } else if (isPaymentMode) {
         // role = 'Payment Mode';
         // Dr: paying out money
-        action =
-            ['Expense', 'Payment', 'Contra'].contains(type)
-                ? 'Subtract'
-                : 'Add';
+        action = ['Expense', 'Payment'].contains(type) ? 'Subtract' : 'Add';
       } else {
         continue; // skip unrelated
       }

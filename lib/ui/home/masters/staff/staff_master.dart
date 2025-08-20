@@ -848,7 +848,7 @@ class _CreateStaffState extends State<CreateStaff> {
         'address': permanentAddressController.text.trim().toString(),
         'pin_code': permanentpinCodeController.text.trim().toString(),
         'temporary_address': permanentAddressController.text.trim().toString(),
-        // 'other1': 'STF',
+        'other1': 'STF',
       },
       files: files, // will be empty if no image is selected
     );
@@ -875,7 +875,8 @@ class _CreateStaffState extends State<CreateStaff> {
     }
 
     final response = await ApiService.uploadMultipleFiles(
-      endpoint: 'staff/${staffData!.id}',
+      endpoint:
+          'staff/${staffData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -900,7 +901,7 @@ class _CreateStaffState extends State<CreateStaff> {
         'address': permanentAddressController.text.trim().toString(),
         'pin_code': permanentpinCodeController.text.trim().toString(),
         'temporary_address': permanentAddressController.text.trim().toString(),
-        // 'other1':'STF'
+        'other1': 'STF',
         '_method': "PUT",
       },
       files: files, // will be empty if no image is selected
@@ -916,7 +917,9 @@ class _CreateStaffState extends State<CreateStaff> {
   }
 
   Future getStaffId() async {
-    var response = await ApiService.fetchData("next-staff-id");
+    var response = await ApiService.fetchData(
+      "next-staff-id?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     staffIdController.text =
         staffData != null
             ? staffData!.staffId!

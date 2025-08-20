@@ -7,7 +7,7 @@ class ApiSalary {
   Future<List<DeviceLog>> fetchLogs(String fromDate, String toDate) async {
     final response = await http.get(
       Uri.parse(
-        "http://103.178.113.149:82/api/v2/WebAPI/GetDeviceLogs?APIKey=555312092406&FromDate=$fromDate&ToDate=$toDate",
+        "http://103.139.59.158:82/api/v2/WebAPI/GetDeviceLogs?APIKey=245516082512&FromDate=$fromDate&ToDate=$toDate",
       ),
     );
     if (response.statusCode == 200) {

@@ -346,7 +346,7 @@ class _DeactivateStudentState extends State<DeactivateStudent> {
 
   Future<void> getHostlers() async {
     final response = await ApiService.fetchData(
-      "student/assign?from_date=01/01/1900&to_date=01/01/2200",
+      "student/assign?from_date=01/01/1900&to_date=01/01/2200&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList = studentReportListFromJson(response['data']);
@@ -354,7 +354,9 @@ class _DeactivateStudentState extends State<DeactivateStudent> {
   }
 
   Future<void> deleteAssignedRoom(int id) async {
-    final response = await ApiService.deleteData("roomassign/$id");
+    final response = await ApiService.deleteData(
+      "roomassign/$id?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
     } else {

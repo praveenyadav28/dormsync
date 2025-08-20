@@ -407,7 +407,7 @@ class _LeaveAddState extends State<LeaveAdd> {
 
   Future getHostlers() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList =

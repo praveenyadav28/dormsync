@@ -36,9 +36,8 @@ class _CreateBranchState extends State<CreateBranch> {
       hostelBiomaxController.text = branchData!.other2 ?? "";
       stateController.text = branchData!.bState ?? "";
       cityController.text = branchData!.bCity ?? "";
-      userNameController.text = branchData!.user?.username ?? "";
-      userNameController.text = branchData!.user?.username ?? "";
-      passwordController.text = branchData!.user?.password ?? "";
+      userNameController.text = branchData!.user?[0].username ?? "";
+      passwordController.text = branchData!.user?[0].password ?? "";
 
       selectedState = SearchFieldListItem<String>(
         branchData!.bState ?? "",

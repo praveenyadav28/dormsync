@@ -400,7 +400,7 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
 
   Future getFeesReceiveList() async {
     var response = await ApiService.fetchData(
-      "fees_received?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "fees_received?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     feesReceiveList = feesReceiveModelFromJson(response['data']);
   }

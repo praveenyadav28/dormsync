@@ -287,22 +287,23 @@ class _LedgerListScreenState extends State<LedgerListScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              IconButton(
-                                icon: Image.asset(height: 20, Images.edit),
-                                onPressed: () async {
-                                  var updatedData = await Navigator.of(
-                                    context,
-                                  ).pushNamed(
-                                    '/create Ledger',
-                                    arguments: item,
-                                  );
-                                  if (updatedData == "New Data") {
-                                    getLedger().then((value) {
-                                      setState(() {});
-                                    });
-                                  }
-                                },
-                              ),
+                              if (item.other1 != "STF")
+                                IconButton(
+                                  icon: Image.asset(height: 20, Images.edit),
+                                  onPressed: () async {
+                                    var updatedData = await Navigator.of(
+                                      context,
+                                    ).pushNamed(
+                                      '/create Ledger',
+                                      arguments: item,
+                                    );
+                                    if (updatedData == "New Data") {
+                                      getLedger().then((value) {
+                                        setState(() {});
+                                      });
+                                    }
+                                  },
+                                ),
                               IconButton(
                                 icon: Image.asset(height: 20, Images.delete),
                                 onPressed: () {
@@ -394,7 +395,7 @@ class _LedgerListScreenState extends State<LedgerListScreen> {
 
   Future getLedger() async {
     var response = await ApiService.fetchData(
-      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       List<LedgerList> allLedgers = ledgerListFromJson(response['data']);

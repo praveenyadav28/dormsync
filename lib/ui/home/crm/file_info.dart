@@ -316,11 +316,7 @@ class _FileInfoState extends State<FileInfo> {
                       tableBody(item.studentName ?? ''),
                       tableBody("📞 ${item.contactNo}\n🏡 ${item.fContactNo}"),
                       tableBody(item.address ?? ''),
-                      tableBody(
-                        DateFormat(
-                          'dd/MM/yyyy',
-                        ).format(item.nextAppointmentDate ?? DateTime.now()),
-                      ),
+                      tableBody(item.nextAppointmentDate),
                       tableBody(item.remark ?? ''),
                       tableBody(item.prospectStatus ?? ''),
                       TableCell(

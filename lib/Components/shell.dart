@@ -29,6 +29,7 @@ import 'package:dorm_sync/ui/home/masters/ledger/ledger_list.dart';
 import 'package:dorm_sync/ui/home/masters/ledger/ledger_master.dart';
 import 'package:dorm_sync/ui/home/nodues/nodues.dart';
 import 'package:dorm_sync/ui/home/profile/profile.dart';
+import 'package:dorm_sync/ui/home/reports/bank_report.dart';
 import 'package:dorm_sync/ui/home/reports/ledger_report.dart';
 import 'package:dorm_sync/ui/home/room/assign_room.dart';
 import 'package:dorm_sync/ui/home/room/room_allotment.dart';
@@ -132,6 +133,7 @@ class _ShellState extends State<Shell> {
       '/leave report': (ctx) => const LeaveReportList(),
       '/fees report': (ctx) => const FeesReportList(),
       '/ledger report': (ctx) => const LedgerReport(),
+      '/bank report': (ctx) => const BankReport(),
     },
     {
       '/': (ctx) => const HostelersList(),
@@ -397,6 +399,10 @@ class _ShellState extends State<Shell> {
                           PopupMenuItem(
                             value: '/ledger report',
                             child: Text('Ledger Report'),
+                          ),
+                          PopupMenuItem(
+                            value: '/bank report',
+                            child: Text('Bank Report'),
                           ),
                         ],
                       );

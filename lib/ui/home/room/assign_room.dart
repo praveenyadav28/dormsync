@@ -75,7 +75,9 @@ class _AssignRoomState extends State<AssignRoom> {
   }
 
   Future<void> getBuildings() async {
-    final response = await ApiService.fetchData('building');
+    final response = await ApiService.fetchData(
+      'building?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         buildings = List<Map<String, dynamic>>.from(response["data"]);
@@ -84,7 +86,9 @@ class _AssignRoomState extends State<AssignRoom> {
   }
 
   Future<void> getFloors() async {
-    final response = await ApiService.fetchData('floor');
+    final response = await ApiService.fetchData(
+      'floor?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         floors = List<Map<String, dynamic>>.from(response["data"]);
@@ -93,7 +97,9 @@ class _AssignRoomState extends State<AssignRoom> {
   }
 
   Future<void> getRooms() async {
-    final response = await ApiService.fetchData('room');
+    final response = await ApiService.fetchData(
+      'room?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       setState(() {
         rooms = List<Map<String, dynamic>>.from(response["data"]);
@@ -227,7 +233,8 @@ class _AssignRoomState extends State<AssignRoom> {
                                     selectedStudent.admissionDate != null
                                         ? DateFormat(
                                           'dd/MM/yyyy',
-                                        ).format(selectedStudent.admissionDate!)  : '';
+                                        ).format(selectedStudent.admissionDate!)
+                                        : '';
                                 courseController.text =
                                     selectedStudent.course ?? '';
                                 courseController.text =
@@ -485,7 +492,7 @@ class _AssignRoomState extends State<AssignRoom> {
 
   Future getHostlers() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList = admissionListFromJson(response['data']);
@@ -493,7 +500,9 @@ class _AssignRoomState extends State<AssignRoom> {
   }
 
   Future getHostlersRoom(String? id) async {
-    var response = await ApiService.fetchData("check-room-assignment/$id");
+    var response = await ApiService.fetchData(
+      "check-room-assignment/$id?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       selectedBuildingId = response['data']['building_id'];
       selectedFloorId = response['data']['floor_id'];
@@ -560,22 +569,25 @@ class _AssignRoomState extends State<AssignRoom> {
   }
 
   Future updateAssignRoom() async {
-    var response = await ApiService.postData('roomassign/$updateId', {
-      'licence_no': Preference.getString(PrefKeys.licenseNo),
-      'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-      'hosteler_details': "",
-      'hosteler_id': studentIdController.text.toString(),
-      'hosteler_name': studentController.text.toString(),
-      'admission_date': admissionDateController.text.toString(),
-      'course_name': courseController.text.toString(),
-      'father_name': fatherNameController.text.toString(),
-      'building_id': selectedBuildingId,
-      'floor_id': selectedFloorId,
-      'room_type': selectedRoomType,
-      'room_no': selectedRoomNumber,
-      "room_id": selectedRoomId,
-      '_method': "PUT",
-    });
+    var response = await ApiService.postData(
+      'roomassign/$updateId?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'hosteler_details': "",
+        'hosteler_id': studentIdController.text.toString(),
+        'hosteler_name': studentController.text.toString(),
+        'admission_date': admissionDateController.text.toString(),
+        'course_name': courseController.text.toString(),
+        'father_name': fatherNameController.text.toString(),
+        'building_id': selectedBuildingId,
+        'floor_id': selectedFloorId,
+        'room_type': selectedRoomType,
+        'room_no': selectedRoomNumber,
+        "room_id": selectedRoomId,
+        '_method': "PUT",
+      },
+    );
 
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);

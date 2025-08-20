@@ -332,7 +332,7 @@ class _AddHostlerState extends State<AddHostler> {
 
   Future getHostlers() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList =
@@ -367,20 +367,23 @@ class _AddHostlerState extends State<AddHostler> {
   }
 
   Future updateAttendance() async {
-    final response = await ApiService.postData('attendance/$updateId', {
-      'licence_no': Preference.getString(PrefKeys.licenseNo),
-      'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-      'hosteler_id': studentIdController.text.toString(),
-      'hosteler_details': studentController.text.toString(),
-      'hosteler_name': studentController.text.toString(),
-      'admission_date': admissionDateController.text.toString(),
-      'course_name': courseController.text.toString(),
-      'father_name': fatherNameController.text.toString(),
-      'hostel_biomax': hostelBiomaxController.text.trim().toString(),
-      'mess_biomax': messBiomaxController.text.trim().toString(),
-      'active_status': 1,
-      '_method': "PUT",
-    });
+    final response = await ApiService.postData(
+      'attendance/$updateId?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'hosteler_id': studentIdController.text.toString(),
+        'hosteler_details': studentController.text.toString(),
+        'hosteler_name': studentController.text.toString(),
+        'admission_date': admissionDateController.text.toString(),
+        'course_name': courseController.text.toString(),
+        'father_name': fatherNameController.text.toString(),
+        'hostel_biomax': hostelBiomaxController.text.trim().toString(),
+        'mess_biomax': messBiomaxController.text.trim().toString(),
+        'active_status': 1,
+        '_method': "PUT",
+      },
+    );
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
       return true;
@@ -391,7 +394,9 @@ class _AddHostlerState extends State<AddHostler> {
   }
 
   Future getAttendenceDetails(String? id) async {
-    var response = await ApiService.fetchData("mbiomax?hosteler_id=$id");
+    var response = await ApiService.fetchData(
+      "mbiomax?hosteler_id=$id&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       messBiomaxController.text = response['data'][0]['mess_biomax'];
       hostelBiomaxController.text = response['data'][0]['hostel_biomax'];

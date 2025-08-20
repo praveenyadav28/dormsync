@@ -15,14 +15,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
 
-class LedgerReport extends StatefulWidget {
-  const LedgerReport({super.key});
+class BankReport extends StatefulWidget {
+  const BankReport({super.key});
 
   @override
-  State<LedgerReport> createState() => _LedgerReportState();
+  State<BankReport> createState() => _BankReportState();
 }
 
-class _LedgerReportState extends State<LedgerReport> {
+class _BankReportState extends State<BankReport> {
   final TextEditingController datepickarfrom = TextEditingController(
     text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
   );
@@ -92,7 +92,7 @@ class _LedgerReportState extends State<LedgerReport> {
                       children: [
                         SizedBox(width: 30),
                         Text(
-                          "Ledger-Report",
+                          "Bank-Report",
                           style: TextStyle(
                             color: AppColor.white,
                             fontSize: 16,
@@ -107,7 +107,7 @@ class _LedgerReportState extends State<LedgerReport> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'Ledger Details  ',
+                        'Bank Details  ',
                         style: TextStyle(
                           color: AppColor.black,
                           fontWeight: FontWeight.w500,
@@ -224,7 +224,7 @@ class _LedgerReportState extends State<LedgerReport> {
               alignment: Alignment.center,
 
               child: Text(
-                "Ledger-Report Details",
+                "Bank-Report Details",
                 style: TextStyle(fontWeight: FontWeight.w500, fontSize: 18),
               ),
             ),
@@ -251,11 +251,11 @@ class _LedgerReportState extends State<LedgerReport> {
           ledgerListFromJson(response['data'])
               .where(
                 (ledger) =>
-                    ledger.other1 != "STU" &&
-                    ledger.ledgerGroup != 'Bank Account' &&
-                    ledger.ledgerGroup != 'Cash In Hand',
+                    ledger.ledgerGroup == 'Bank Account' ||
+                    ledger.ledgerGroup == 'Cash In Hand',
               )
               .toList();
+      print(ledgerListSearch);
     }
   }
 

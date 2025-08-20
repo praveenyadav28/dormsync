@@ -6,7 +6,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseurl = "http://192.168.1.7:8000/api";
+  static const String baseurl = "http://192.168.1.25:8000/api";
 
   static Future fetchData(String endpoint) async {
     final response = await http.get(
@@ -86,6 +86,7 @@ class ApiService {
           'Accept': 'application/json',
           'Authorization': 'Bearer ${Preference.getString(PrefKeys.token)}',
         },
+        body: {"licence_no": Preference.getString(PrefKeys.licenseNo)},
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {

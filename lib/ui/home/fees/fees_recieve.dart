@@ -578,7 +578,7 @@ class _FeesReceiveState extends State<FeesReceive> {
 
   Future getLedger() async {
     var response = await ApiService.fetchData(
-      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       ledgerList = ledgerListFromJson(response['data']);
@@ -587,7 +587,7 @@ class _FeesReceiveState extends State<FeesReceive> {
 
   Future getStudent() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList = admissionListFromJson(response['data']);
@@ -596,7 +596,7 @@ class _FeesReceiveState extends State<FeesReceive> {
 
   Future getStaff() async {
     var response = await ApiService.fetchData(
-      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       staffList = staffListFromJson(response['data']);
@@ -711,14 +711,16 @@ class _FeesReceiveState extends State<FeesReceive> {
   }
 
   Future getVoucherId() async {
-    var response = await ApiService.fetchData("nextfees_no");
+    var response = await ApiService.fetchData(
+      "nextfees_no?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
 
     feesNumberController.text = response['next-fees_no'].toString();
   }
 
   Future getFeesDetails(String studentId) async {
     var response = await ApiService.fetchData(
-      "fees_student?hosteler_id=$studentId&session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "fees_student?hosteler_id=$studentId&session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       feesList = feesListFromJson(response['data']);

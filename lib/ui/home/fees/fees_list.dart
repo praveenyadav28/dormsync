@@ -413,7 +413,7 @@ class _FeesListScreenState extends State<FeesListScreen> {
 
   Future getFeesList() async {
     var response = await ApiService.fetchData(
-      "fees_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "fees_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       feesList = feesListFromJson(response['data']);

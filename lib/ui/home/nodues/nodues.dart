@@ -101,20 +101,56 @@ class _NoDuesCheckState extends State<NoDuesCheck> {
     // Voucher processing
     for (var v in voucherList) {
       final amount = double.tryParse(v.amount ?? "0") ?? 0;
-      final isPayment = v.voucherType?.toLowerCase() == "payment";
-      final isReceipt = v.voucherType?.toLowerCase() == "receipt";
+      final voucherType = v.voucherType?.toLowerCase();
 
-      if (isPayment || isReceipt) {
+      if (voucherType == "payment") {
         allTransactions.add(
           CombinedTransaction(
-            source: isPayment ? 'Voucher-Payment' : 'Voucher-Receipt',
+            source: 'Voucher-Payment',
             date: v.voucherDate ?? '',
-            description:
-                isPayment ? 'Refund to student' : 'Received from student',
+            description: 'Refund to student',
             amount: amount,
-            effect: isPayment ? 'debit' : 'credit',
+            effect: 'debit',
           ),
         );
+      } else if (voucherType == "receipt") {
+        allTransactions.add(
+          CombinedTransaction(
+            source: 'Voucher-Receipt',
+            date: v.voucherDate ?? '',
+            description: 'Received from student',
+            amount: amount,
+            effect: 'credit',
+          ),
+        );
+      } else if (voucherType == "journal") {
+        final studentName = studentController.text.trim().toLowerCase();
+        final accountHead = v.accountHead?.trim().toLowerCase();
+        final paymentMode = v.paymentMode?.trim().toLowerCase();
+
+        if (studentName == accountHead) {
+          // Credit case
+          allTransactions.add(
+            CombinedTransaction(
+              source: 'Voucher-Journal',
+              date: v.voucherDate ?? '',
+              description: 'Journal Credit',
+              amount: amount,
+              effect: 'credit',
+            ),
+          );
+        } else if (studentName == paymentMode) {
+          // Debit case
+          allTransactions.add(
+            CombinedTransaction(
+              source: 'Voucher-Journal',
+              date: v.voucherDate ?? '',
+              description: 'Journal Debit',
+              amount: amount,
+              effect: 'debit',
+            ),
+          );
+        }
       }
     }
 
@@ -349,11 +385,11 @@ class _NoDuesCheckState extends State<NoDuesCheck> {
                       addMasterOutside3(
                         children: [
                           _summaryTile(
-                            "Total Fees(Payment) : ₹${totalCredit.abs().toStringAsFixed(2)}",
+                            "Total Fees(Payment) : ₹${totalDebit.abs().toStringAsFixed(2)}",
                             AppColor.blue,
                           ),
                           _summaryTile(
-                            "Total Credit : ₹${totalDebit.abs().toStringAsFixed(2)}",
+                            "Total Credit : ₹${totalCredit.abs().toStringAsFixed(2)}",
                             Colors.green,
                           ),
                           _summaryTile(
@@ -374,7 +410,7 @@ class _NoDuesCheckState extends State<NoDuesCheck> {
 
   Future getHostlers() async {
     var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList = admissionListFromJson(response['data']);
@@ -383,7 +419,7 @@ class _NoDuesCheckState extends State<NoDuesCheck> {
 
   Future getNoduesData() async {
     final response = await ApiService.fetchData(
-      'alldata_fatch?hosteler_id=$studentId&hosteler_name=${studentController.text.toString()}',
+      'alldata_fatch?hosteler_id=$studentId&hosteler_name=${studentController.text.toString()}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
     );
 
     if (response["status"] == true) {
@@ -392,10 +428,7 @@ class _NoDuesCheckState extends State<NoDuesCheck> {
         response['data']['Fees-Received'],
       );
       feesList = feesListFromJson(response['data']['Fees-Entry']);
-      voucherList = voucherModelFromJson(
-        response['data']['Vouchers'][studentId],
-      );
-
+      voucherList = voucherModelFromJson(response['data']['Vouchers']);
       setState(() {
         combineAndCalculate();
       });

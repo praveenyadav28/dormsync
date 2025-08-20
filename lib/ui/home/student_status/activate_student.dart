@@ -344,7 +344,7 @@ class _ReactivateStudentState extends State<ReactivateStudent> {
 
   Future<void> getHostlers() async {
     final response = await ApiService.fetchData(
-      "active/status?from_date=01/01/1900&to_date=01/01/2200",
+      "active/status?from_date=01/01/1900&to_date=01/01/2200&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       studentList = studentReportListFromJson(response['data']);
@@ -373,20 +373,22 @@ class _ReactivateStudentState extends State<ReactivateStudent> {
   }
 
   Future updateReactivateStudent() async {
-    final response =
-        await ApiService.postData('reactivate/${activateData!.id}', {
-          'licence_no': Preference.getString(PrefKeys.licenseNo),
-          'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-          'hosteler_id': studentIdController.text.toString(),
-          'hosteler_details': studentController.text.toString(),
-          'hosteler_name': studentController.text.toString(),
-          'admission_date': admissionDateController.text.toString(),
-          'contact_no': contactNoController.text.toString(),
-          'father_name': fatherNameController.text.toString(),
-          'remark': remarkController.text.toString(),
-          'join_date': joinDatePicker.text.toString(),
-          '_method': "PUT",
-        });
+    final response = await ApiService.postData(
+      'reactivate/${activateData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'hosteler_id': studentIdController.text.toString(),
+        'hosteler_details': studentController.text.toString(),
+        'hosteler_name': studentController.text.toString(),
+        'admission_date': admissionDateController.text.toString(),
+        'contact_no': contactNoController.text.toString(),
+        'father_name': fatherNameController.text.toString(),
+        'remark': remarkController.text.toString(),
+        'join_date': joinDatePicker.text.toString(),
+        '_method': "PUT",
+      },
+    );
 
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);

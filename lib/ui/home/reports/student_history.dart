@@ -1,3 +1,4 @@
+import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/reuse.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -83,7 +84,9 @@ class _StudentHistoryListState extends State<StudentHistoryList> {
   }
 
   Future<void> getBuildings() async {
-    final response = await ApiService.fetchData('building');
+    final response = await ApiService.fetchData(
+      'building?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       buildings = List<Map<String, dynamic>>.from(response["data"]);
       buildingMap = {for (var b in buildings) b['id']: b['building']};
@@ -91,7 +94,9 @@ class _StudentHistoryListState extends State<StudentHistoryList> {
   }
 
   Future<void> getFloors() async {
-    final response = await ApiService.fetchData('floor');
+    final response = await ApiService.fetchData(
+      'floor?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
+    );
     if (response["status"] == true) {
       floors = List<Map<String, dynamic>>.from(response["data"]);
       floorMap = {for (var f in floors) f['id']: f['floor']};
@@ -100,7 +105,7 @@ class _StudentHistoryListState extends State<StudentHistoryList> {
 
   Future<void> getStudentList() async {
     final response = await ApiService.fetchData(
-      "student/assign?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}",
+      "student/assign?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       _showExHostlerList = true;
@@ -110,7 +115,7 @@ class _StudentHistoryListState extends State<StudentHistoryList> {
 
   Future<void> getStudentDiactivateList() async {
     final response = await ApiService.fetchData(
-      "active/status?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}",
+      "active/status?from_date=${datepickarfrom.text}&to_date=${datepickarto.text}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       _showExHostlerList = false;

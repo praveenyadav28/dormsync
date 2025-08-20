@@ -61,6 +61,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
   String _previousText = '';
 
   String? accountHeadType = '';
+  String? paymentModeType = '';
 
   double? accountHeadBalance;
   double? payModeBalance;
@@ -119,17 +120,6 @@ class _CreateVoucherState extends State<CreateVoucher> {
   Future<void> fetchInitialData() async {
     await getLedger();
     await getStaff();
-
-    setState(() {
-      paymentModeLedgers =
-          ledgerListSearch
-              .where(
-                (ledger) =>
-                    ledger.ledgerGroup == "Bank Account" ||
-                    ledger.ledgerGroup == "Cash In Hand",
-              )
-              .toList();
-    });
   }
 
   void updateAccountHeadLedgers(String voucherType) {
@@ -157,6 +147,24 @@ class _CreateVoucherState extends State<CreateVoucher> {
     accountHeadType = '';
   }
 
+  void updatePaymentModeLedgers(String voucherType) {
+    if (voucherType == "Journal") {
+      paymentModeLedgers = ledgerListSearch;
+    } else {
+      paymentModeLedgers =
+          ledgerListSearch
+              .where(
+                (ledger) =>
+                    ledger.ledgerGroup == "Bank Account" ||
+                    ledger.ledgerGroup == "Cash In Hand",
+              )
+              .toList();
+    }
+    selectedPaymentLedger = null;
+    payModeBalance = 0;
+    paymentModeType = '';
+  }
+
   String getAmountLabel() {
     switch (selectedVoucherType) {
       case 'Receipt':
@@ -166,9 +174,9 @@ class _CreateVoucherState extends State<CreateVoucher> {
       case 'Payment':
         return "Debit Amount";
       case 'Contra':
-        return "Amount";
+        return "Debit Amount";
       case 'Journal':
-        return "Amount";
+        return "Credit Amount";
       default:
         return "Amount";
     }
@@ -249,6 +257,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           setState(() {
                             selectedVoucherType = value;
                             updateAccountHeadLedgers(value!);
+                            updatePaymentModeLedgers(value);
                           });
                         },
                         items:
@@ -419,11 +428,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
                                   ),
                                 )
                                 .toList(),
+
                         onSuggestionTap: (val) {
                           setState(() {
                             paymentModeController.text = val.item!.ledgerName!;
                             selectedPaymentLedger = val.item;
                             payLedgerId = val.item!.id;
+                            paymentModeType =
+                                selectedPaymentLedger?.other1 ?? '';
+
                             geLedgerData(false);
                           });
                           if (selectedVoucherType == 'Journal') {
@@ -435,6 +448,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
                           }
                         },
                         searchInputDecoration: InputDecoration(
+                          suffixIcon: Text(
+                            "$paymentModeType",
+                            style: TextStyle(
+                              color: AppColor.primary2,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              height: 2,
+                            ),
+                          ),
                           floatingLabelStyle: TextStyle(
                             color: AppColor.black,
                             fontWeight: FontWeight.w500,
@@ -450,7 +472,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
                     ),
                   ],
                 ),
-                payModeBalance != null
+                payModeBalance != null && paymentModeType != "STU"
                     ? Center(
                       child: Container(
                         height: 50,
@@ -559,7 +581,14 @@ class _CreateVoucherState extends State<CreateVoucher> {
                 hight: 40,
                 width: 150,
                 onTap: () {
-                  voucherData != null ? updateVoucher([]) : postVoucher([]);
+                  if (accLedgerId == payLedgerId) {
+                    showCustomSnackbarError(
+                      context,
+                      "Account Head and Payment Mode must be diffrent.",
+                    );
+                  } else {
+                    voucherData != null ? updateVoucher([]) : postVoucher([]);
+                  }
                 },
               ),
             ),
@@ -572,7 +601,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
   Future getLedger() async {
     var response = await ApiService.fetchData(
-      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "ledger?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       ledgerListSearch = ledgerListFromJson(response['data']);
@@ -581,7 +610,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
 
   Future getStaff() async {
     var response = await ApiService.fetchData(
-      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       staffList = staffListFromJson(response['data']);
@@ -645,7 +674,8 @@ class _CreateVoucherState extends State<CreateVoucher> {
     }
 
     final response = await ApiService.uploadMultipleFiles(
-      endpoint: 'voucher/${voucherData!.id}',
+      endpoint:
+          'voucher/${voucherData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -676,13 +706,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
   }
 
   Future getVoucherId() async {
-    var response = await ApiService.fetchData("next-vouchere-no");
+    var response = await ApiService.fetchData(
+      "next-vouchere-no?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     voucherNumberController.text = response['next-voucher-no'].toString();
   }
 
   Future geLedgerData(bool isAccountHead) async {
     final response = await ApiService.fetchData(
-      'ledger_id_name?ledger_id=${isAccountHead ? accLedgerId : payLedgerId}&ledger_name=${isAccountHead ? accountHeadController.text.trim() : paymentModeController.text.trim()}',
+      'ledger_id_name?ledger_id=${isAccountHead ? accLedgerId : payLedgerId}&ledger_name=${isAccountHead ? accountHeadController.text.trim() : paymentModeController.text.trim()}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}',
     );
 
     if (response["status"] == true) {
@@ -732,15 +764,9 @@ class _CreateVoucherState extends State<CreateVoucher> {
           (item.payLedgerId ?? '') == (selectedLedger?.id ?? '').toString();
 
       if (isAccountHeadMatch) {
-        role =
-            ['Expense', 'Payment', 'Contra'].contains(type)
-                ? 'Add'
-                : 'Subtract';
+        role = ['Expense', 'Payment'].contains(type) ? 'Add' : 'Subtract';
       } else if (isPaymentModeMatch) {
-        role =
-            ['Expense', 'Payment', 'Contra'].contains(type)
-                ? 'Subtract'
-                : 'Add';
+        role = ['Expense', 'Payment'].contains(type) ? 'Subtract' : 'Add';
       } else {
         continue;
       }

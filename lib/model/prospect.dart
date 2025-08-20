@@ -22,7 +22,8 @@ class ProspectList {
   String? fatherName;
   String? fContactNo;
   String? staff;
-  DateTime? nextAppointmentDate;
+  String? nextAppointmentDate;
+  String? prospectDate;
   String? time;
   String? remark;
   String? state;
@@ -43,6 +44,7 @@ class ProspectList {
     this.address,
     this.staff,
     this.nextAppointmentDate,
+    this.prospectDate,
     this.time,
     this.remark,
     this.state,
@@ -61,10 +63,8 @@ class ProspectList {
     contactNo: json["contact_no"],
     address: json["address"],
     staff: json["staff"],
-    nextAppointmentDate:
-        json["next_appointment_date"] == null
-            ? null
-            : DateFormat('dd/MM/yyyy').parse(json["next_appointment_date"]),
+    nextAppointmentDate: json["next_appointment_date"],
+    prospectDate: json["prospect_date"],
     time: json["time"],
     remark: json["remark"],
     city: json["city"],
@@ -73,13 +73,9 @@ class ProspectList {
     fContactNo: json["f_contact_no"],
     prospectStatus: json["prospect_status"],
     createdAt:
-        json["created_at"] == null
-            ? null
-            : DateFormat('dd/MM/yyyy').parse(json["created_at"]),
+        json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
     updatedAt:
-        json["updated_at"] == null
-            ? null
-            : DateFormat('dd/MM/yyyy').parse(json["updated_at"]),
+        json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -91,7 +87,8 @@ class ProspectList {
     "contact_no": contactNo,
     "address": address,
     "staff": staff,
-    "next_appointment_date": nextAppointmentDate?.toIso8601String(),
+    "next_appointment_date": nextAppointmentDate,
+    "prospect_date": prospectDate,
     "time": time,
     "remark": remark,
     "city": city,

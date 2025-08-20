@@ -392,7 +392,7 @@ class _StaffListScreenState extends State<StaffListScreen> {
 
   Future getStaff() async {
     var response = await ApiService.fetchData(
-      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "staff?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       staffList = staffListFromJson(response['data']);

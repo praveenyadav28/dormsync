@@ -354,7 +354,7 @@ class _DeactivatedListScreenState extends State<DeactivatedListScreen> {
 
   Future getDeactivatedList() async {
     var response = await ApiService.fetchData(
-      "dectivate?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "dectivate?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       deactiveteList = deactivatedListFromJson(response['data']);

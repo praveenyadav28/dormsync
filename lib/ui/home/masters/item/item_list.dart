@@ -390,7 +390,7 @@ class _ItemListScreenState extends State<ItemListScreen> {
 
   Future getItems() async {
     var response = await ApiService.fetchData(
-      "item?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+      "item?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     itemList = itemListFromJson(response['data']);
   }

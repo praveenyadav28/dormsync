@@ -414,7 +414,7 @@ class _HostelersListState extends State<HostelersList> {
 
   Future getHostlers() async {
     var response = await ApiService.fetchData(
-      "isactive?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "isactive?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       hostlersList = admissionListFromJson(response['data']);

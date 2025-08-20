@@ -398,7 +398,7 @@ class _VisitorListScreenState extends State<VisitorListScreen> {
 
   Future getVisitor() async {
     var response = await ApiService.fetchData(
-      "visitor_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}",
+      "visitor_isactive?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
     if (response["status"] == true) {
       visitorList = visitorListFromJson(response['data']);

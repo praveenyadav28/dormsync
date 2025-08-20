@@ -369,14 +369,17 @@ class _SessionScreenState extends State<SessionScreen> {
   }
 
   Future updateSession(int id, String fromDate, String toDate) async {
-    var response = await ApiService.postData('session/$id', {
-      'licence_no': Preference.getString(PrefKeys.licenseNo),
-      'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-      'session_start_date': fromDate,
-      'session_end_date': toDate,
-      'is_active': true,
-      '_method': 'PUT',
-    });
+    var response = await ApiService.postData(
+      'session/$id?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+      {
+        'licence_no': Preference.getString(PrefKeys.licenseNo),
+        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+        'session_start_date': fromDate,
+        'session_end_date': toDate,
+        'is_active': true,
+        '_method': 'PUT',
+      },
+    );
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
     } else {
@@ -385,7 +388,9 @@ class _SessionScreenState extends State<SessionScreen> {
   }
 
   Future<void> getSession() async {
-    var response = await ApiService.fetchData("session");
+    var response = await ApiService.fetchData(
+      "session?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       setState(() {
         financialYears =
