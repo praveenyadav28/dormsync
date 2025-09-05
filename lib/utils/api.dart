@@ -6,7 +6,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseurl = "http://192.168.1.25:8000/api";
+  static const String baseurl = "https://api.dormsync.com/api";
 
   static Future fetchData(String endpoint) async {
     final response = await http.get(
