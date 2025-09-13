@@ -10,6 +10,7 @@ import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/container.dart';
 import 'package:dorm_sync/utils/date_change.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/file_saver.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
@@ -17,6 +18,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -74,6 +76,22 @@ class _FeesReceiveState extends State<FeesReceive> {
 
   bool isChecked = false;
 
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _documentImages = []; // Multiple docs
+  List<String> _documentImageUrls = [];
+
+  // ------------ Pick Multiple Docs ------------
+  Future<void> _pickDocumentImages() async {
+    try {
+      final docs = await _picker.pickMultiImage();
+      if (docs.isNotEmpty) {
+        setState(() => _documentImages.addAll(docs));
+      }
+    } catch (e) {
+      print("Failed to pick docs: $e");
+    }
+  }
+
   @override
   void initState() {
     Future.delayed(Duration.zero, () {
@@ -88,6 +106,7 @@ class _FeesReceiveState extends State<FeesReceive> {
         contactController.text = feesReceiveData!.contactNo ?? "";
         fatherNameController.text = feesReceiveData!.fatherName ?? "";
         admissionDateController.text = feesReceiveData!.admissionDate ?? "";
+        _documentImageUrls = feesReceiveData?.uplodeFile?.cast<String>() ?? [];
         totalFessController.text = feesReceiveData!.other1?.toString() ?? "0";
         discountController.text = feesReceiveData!.other2?.toString() ?? "0";
         finalAmountController.text = feesReceiveData!.other3?.toString() ?? "0";
@@ -556,16 +575,34 @@ class _FeesReceiveState extends State<FeesReceive> {
               ],
               context: context,
             ),
+
+            SizedBox(height: Sizes.height * .03),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Documents"),
+              onPressed: _pickDocumentImages,
+            ),
+            SizedBox(height: 10),
+            DocumentImageGrid(
+              networkUrls: _documentImageUrls,
+              localFiles: _documentImages.map((doc) => File(doc.path)).toList(),
+            ),
+
+            SizedBox(height: Sizes.height * .05),
+
             SizedBox(height: Sizes.height * 0.05),
             Center(
               child: DefaultButton(
                 text: feesReceiveData == null ? "Create" : "Update",
                 hight: 40,
                 width: 150,
-                onTap: () {
+                onTap: () async {
+                  // multiple documents (XFile)
+                  final List<XFile> documents = _documentImages;
+
                   feesReceiveData == null
-                      ? postFeesReceive([])
-                      : updateFeesReceive([]);
+                      ? await postFeesReceive(documents)
+                      : await updateFeesReceive(documents);
                 },
               ),
             ),
@@ -603,21 +640,13 @@ class _FeesReceiveState extends State<FeesReceive> {
     }
   }
 
-  Future postFeesReceive(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future postFeesReceive(List<XFile> documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'fees_received',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"ss_image[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -645,7 +674,7 @@ class _FeesReceiveState extends State<FeesReceive> {
         'other4': totalEMIController.text.toString(),
         'other5': nextEMIAmountController.text.toString(),
       },
-      files: files, // will be empty if no image is selected
+      // files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {
@@ -656,21 +685,13 @@ class _FeesReceiveState extends State<FeesReceive> {
     }
   }
 
-  Future updateFeesReceive(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future updateFeesReceive(List<XFile> documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'fees_received/${feesReceiveData!.id!}',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"ss_image[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -699,7 +720,7 @@ class _FeesReceiveState extends State<FeesReceive> {
         'other5': nextEMIAmountController.text.toString(),
         '_method': 'PUT',
       },
-      files: files, // will be empty if no image is selected
+      // files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {

@@ -32,6 +32,7 @@ class Preference {
 class PrefKeys {
   static const token = "token";
   static const userstatus = "userstatus";
+  static const branchName = "branchName";
   static const branchLength = "branchLength";
   static const licenseNo = "licenseNo";
   static const locationId = "locationId";
@@ -55,6 +56,7 @@ logoutPrefData() async {
   await prefs.remove(PrefKeys.locationId);
   await prefs.remove(PrefKeys.phoneNumber);
   await prefs.remove(PrefKeys.email);
+  await prefs.remove(PrefKeys.branchName);
   await prefs.remove(PrefKeys.staffId);
   await prefs.remove(PrefKeys.userType);
   await prefs.remove(PrefKeys.financialYear);

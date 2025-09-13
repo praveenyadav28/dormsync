@@ -5,6 +5,7 @@ import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/container.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/file_saver.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
@@ -12,7 +13,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/statecities.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:searchfield/searchfield.dart';
 
 class CreateLedger extends StatefulWidget {
@@ -46,6 +47,22 @@ class _CreateLedgerState extends State<CreateLedger> {
     'Misc Charges',
   ];
 
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _documentImages = []; // Multiple docs
+  List<String> _documentImageUrls = [];
+
+  // ------------ Pick Multiple Docs ------------
+  Future<void> _pickDocumentImages() async {
+    try {
+      final docs = await _picker.pickMultiImage();
+      if (docs.isNotEmpty) {
+        setState(() => _documentImages.addAll(docs));
+      }
+    } catch (e) {
+      print("Failed to pick docs: $e");
+    }
+  }
+
   LedgerList? ledgerData;
   @override
   void didChangeDependencies() {
@@ -61,6 +78,7 @@ class _CreateLedgerState extends State<CreateLedger> {
       _selectedBalance = ledgerData?.openingType ?? "Dr";
       ledgerNameController.text = ledgerData?.ledgerName ?? "";
       fatherNameController.text = ledgerData?.name ?? "";
+      _documentImageUrls = ledgerData?.uplodeFile?.cast<String>() ?? [];
       contactNoNameController.text = ledgerData?.contactNo ?? "";
       emailIdController.text = ledgerData?.email ?? "";
       whatsapppNoController.text = ledgerData?.whatsappNo ?? "";
@@ -756,6 +774,19 @@ class _CreateLedgerState extends State<CreateLedger> {
               ],
               context: context,
             ),
+
+            SizedBox(height: Sizes.height * .03),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Documents"),
+              onPressed: _pickDocumentImages,
+            ),
+            SizedBox(height: 10),
+            DocumentImageGrid(
+              networkUrls: _documentImageUrls,
+              localFiles: _documentImages.map((doc) => File(doc.path)).toList(),
+            ),
+
             SizedBox(height: Sizes.height * .05),
 
             Center(
@@ -763,7 +794,10 @@ class _CreateLedgerState extends State<CreateLedger> {
                 text: ledgerData == null ? "Create" : 'Update',
                 hight: 40,
                 width: 150,
-                onTap: () {
+                onTap: () async {
+                  // multiple documents (XFile)
+                  final List<XFile> documents = _documentImages;
+
                   ledgerData != null
                       ? showDialog(
                         context: context,
@@ -784,7 +818,9 @@ class _CreateLedgerState extends State<CreateLedger> {
                                     backgroundColor: AppColor.primary,
                                   ),
                                   onPressed: () async {
-                                    bool success = await updateLedger([]);
+                                    bool success = await updateLedger(
+                                      documents,
+                                    );
                                     Navigator.of(
                                       dialogContext,
                                     ).pop(); // ✅ Close dialog
@@ -799,7 +835,7 @@ class _CreateLedgerState extends State<CreateLedger> {
                               ],
                             ),
                       )
-                      : postLedger([]);
+                      : postLedger(documents);
                 },
               ),
             ),
@@ -810,21 +846,13 @@ class _CreateLedgerState extends State<CreateLedger> {
     );
   }
 
-  Future postLedger(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future postLedger(List<XFile>? documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'ledger',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"ledger_file[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -859,7 +887,6 @@ class _CreateLedgerState extends State<CreateLedger> {
         'other4': "",
         'other5': "",
       },
-      files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {
@@ -870,21 +897,13 @@ class _CreateLedgerState extends State<CreateLedger> {
     }
   }
 
-  Future updateLedger(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future updateLedger(List<XFile>? documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'ledger/${ledgerData!.id}',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"ledger_file[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -920,7 +939,6 @@ class _CreateLedgerState extends State<CreateLedger> {
         'other5': "",
         '_method': "PUT",
       },
-      files: files,
     );
 
     if (response["status"] == true) {

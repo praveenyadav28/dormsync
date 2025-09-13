@@ -7,14 +7,16 @@ import 'package:dorm_sync/utils/container.dart';
 import 'package:dorm_sync/utils/date_change.dart';
 import 'package:dorm_sync/utils/decoration.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/file_saver.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/statecities.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -37,6 +39,37 @@ class _CreateHostelersState extends State<CreateHostelers> {
   final List<String> _casteList = ['General', 'OBC', 'SC', 'ST'];
 
   int maritalStatus = 0;
+
+  // ------------ Variables ------------
+  final ImagePicker _picker = ImagePicker();
+  XFile? _profileImage; // Single profile image
+  List<XFile> _documentImages = []; // Multiple docs
+  String? _profileImageUrl;
+  List<String> _documentImageUrls = [];
+
+  // ------------ Pick Profile Image ------------
+  Future<void> _pickProfileImage() async {
+    try {
+      final img = await _picker.pickImage(source: ImageSource.gallery);
+      if (img != null) {
+        setState(() => _profileImage = img);
+      }
+    } catch (e) {
+      print("Failed to pick profile image: $e");
+    }
+  }
+
+  // ------------ Pick Multiple Docs ------------
+  Future<void> _pickDocumentImages() async {
+    try {
+      final docs = await _picker.pickMultiImage();
+      if (docs.isNotEmpty) {
+        setState(() => _documentImages.addAll(docs));
+      }
+    } catch (e) {
+      print("Failed to pick docs: $e");
+    }
+  }
 
   AdmissionList? admissionData;
   @override
@@ -69,6 +102,8 @@ class _CreateHostelersState extends State<CreateHostelers> {
       maritalStatus = admissionData!.maritalStatus == "Single" ? 0 : 1;
       whatsapppNoController.text = admissionData!.whatsappNo ?? "";
       aadharNoController.text = admissionData!.aadharNo ?? "";
+      _profileImageUrl = admissionData?.image;
+      _documentImageUrls = admissionData?.uplodeFile?.cast<String>() ?? [];
       permanentAddressController.text = admissionData!.permanentAddress ?? "";
       permanentareaController.text = admissionData!.permanentCityTown ?? "";
       permanentpinCodeController.text = admissionData!.permanentPinCode ?? "";
@@ -399,10 +434,30 @@ class _CreateHostelersState extends State<CreateHostelers> {
                 Expanded(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        maxRadius: 50,
-                        backgroundColor: AppColor.grey,
-                        child: Icon(Icons.camera_alt_outlined, size: 40),
+                      GestureDetector(
+                        onTap: _pickProfileImage,
+                        child: CircleAvatar(
+                          maxRadius: 50,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage:
+                              _profileImage != null
+                                  ? (kIsWeb
+                                      ? NetworkImage(_profileImage!.path)
+                                      : FileImage(File(_profileImage!.path))
+                                          as ImageProvider)
+                                  : (_profileImageUrl != null
+                                      ? NetworkImage(_profileImageUrl!)
+                                      : null),
+                          child:
+                              (_profileImage == null &&
+                                      _profileImageUrl == null)
+                                  ? const Icon(
+                                    Icons.camera_alt_outlined,
+                                    size: 40,
+                                    color: Colors.black54,
+                                  )
+                                  : null,
+                        ),
                       ),
                       Text(
                         "Candidate Photo",
@@ -819,6 +874,17 @@ class _CreateHostelersState extends State<CreateHostelers> {
               ],
               context: context,
             ),
+            SizedBox(height: Sizes.height * .03),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Documents"),
+              onPressed: _pickDocumentImages,
+            ),
+            SizedBox(height: 10),
+            DocumentImageGrid(
+              networkUrls: _documentImageUrls,
+              localFiles: _documentImages.map((doc) => File(doc.path)).toList(),
+            ),
             SizedBox(height: Sizes.height * .05),
 
             Center(
@@ -847,7 +913,18 @@ class _CreateHostelersState extends State<CreateHostelers> {
                                     backgroundColor: AppColor.primary,
                                   ),
                                   onPressed: () async {
-                                    bool success = await updateAdmission([]);
+                                    // multiple documents (XFile)
+                                    final List<XFile> documents =
+                                        _documentImages;
+
+                                    // single profile image (XFile)
+                                    final XFile? profile = _profileImage;
+
+                                    // Call the new cross-platform uploader
+                                    bool success = await updateAdmission(
+                                      documents: documents,
+                                      profileImage: profile,
+                                    );
                                     Navigator.of(
                                       dialogContext,
                                     ).pop(); // ✅ Close dialog
@@ -879,134 +956,139 @@ class _CreateHostelersState extends State<CreateHostelers> {
     );
   }
 
-  Future postAdmission(List<File> images) async {
-    List<http.MultipartFile> files = [];
+  Future<void> postAdmission({
+    List<XFile>? documents, // multiple images/files
+    XFile? profileImage, // single image
+  }) async {
+    try {
+      final response = await ApiService.uploadFiles(
+        endpoint: 'admissionform',
+        fields: {
+          'licence_no': Preference.getString(PrefKeys.licenseNo),
+          'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+          'admission_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
+          'student_id': studentIdController.text.trim(),
+          'student_name': studentNameController.text.trim(),
+          'gender': _selectedGender ?? "Male",
+          'marital_status': maritalStatus == 0 ? "Single" : "Married",
+          'aadhar_no': aadharNoController.text.trim(),
+          'caste': _selectedCaste ?? "OBC",
+          'primary_contact_no': contactNoController.text.trim(),
+          'whatsapp_no': whatsapppNoController.text.trim(),
+          'email': emailIdController.text.trim(),
+          'college_name': collegeController.text.trim(),
+          'course': courseController.text.trim(),
+          'date_of_birth': dobDatepicker.text.trim(),
+          'year': yearController.text.trim(),
+          'father_name': fatherNameController.text.trim(),
+          'mother_name': motherNameController.text.trim(),
+          'guardian': guardianNameController.text.trim(),
+          'emergency_no': emergencyNoController.text.trim(),
+          'parent_contect': parentContactController.text.trim(),
+          'permanent_address': permanentAddressController.text.trim(),
+          'permanent_state': stateController.text.trim(),
+          'permanent_city': cityController.text.trim(),
+          'permanent_city_town': permanentareaController.text.trim(),
+          'permanent_pin_code': permanentpinCodeController.text.trim(),
+          'temporary_address': temporaryAddressController.text.trim(),
+          'temporary_state': tempSateController.text.trim(),
+          'temporary_city': tempCityController.text.trim(),
+          'temporary_city_town': temporaryareaController.text.trim(),
+          'temporary_pin_code': temporarypinCodeController.text.trim(),
+          'title': "Mr",
+          'relation_type': "S/O",
+          'ledger_group': "Sundry Debtors",
+          'opening_balance': "0",
+          'opening_type': "Dr",
+        },
+        singleFiles: profileImage != null ? {"image": profileImage} : null,
+        multiFiles:
+            documents != null && documents.isNotEmpty
+                ? {"uplode_file[]": documents}
+                : null,
+      );
 
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
+      if (response["status"] == true) {
+        showCustomSnackbarSuccess(context, response['message']);
+        print("✅ Admission data and image(s) uploaded successfully!");
+        Navigator.pop(context, "New Data");
+      } else {
+        showCustomSnackbarError(context, response['message']);
+        print("❌ Failed to upload admission data or image(s).");
       }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
-      endpoint: 'admissionform',
-      fields: {
-        'licence_no': Preference.getString(PrefKeys.licenseNo),
-        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-        'admission_date': DateFormat('dd/MM/yyyy').format(DateTime.now()),
-        'student_id': studentIdController.text.trim().toString(),
-        'student_name': studentNameController.text.trim().toString(),
-        'gender': _selectedGender ?? "Male",
-        'marital_status': maritalStatus == 0 ? "Single" : "Married",
-        'aadhar_no': aadharNoController.text.trim().toString(),
-        'caste': _selectedCaste ?? "OBC",
-        'primary_contact_no': contactNoController.text.trim().toString(),
-        'whatsapp_no': whatsapppNoController.text.trim().toString(),
-        'email': emailIdController.text.trim().toString(),
-        'college_name': collegeController.text.trim().toString(),
-        'course': courseController.text.trim().toString(),
-        'date_of_birth': dobDatepicker.text.trim().toString(),
-        'year': yearController.text.trim().toString(),
-        'father_name': fatherNameController.text.trim().toString(),
-        'mother_name': motherNameController.text.trim().toString(),
-        'guardian': guardianNameController.text.trim().toString(),
-        'emergency_no': emergencyNoController.text.trim().toString(),
-        'parent_contect': parentContactController.text.trim().toString(),
-        'permanent_address': permanentAddressController.text.trim().toString(),
-        'permanent_state': stateController.text.trim().toString(),
-        'permanent_city': cityController.text.trim().toString(),
-        'permanent_city_town': permanentareaController.text.trim().toString(),
-        'permanent_pin_code': permanentpinCodeController.text.trim().toString(),
-        'temporary_address': temporaryAddressController.text.trim().toString(),
-        'temporary_state': tempSateController.text.trim().toString(),
-        'temporary_city': tempCityController.text.trim().toString(),
-        'temporary_city_town': temporaryareaController.text.trim().toString(),
-        'temporary_pin_code': temporarypinCodeController.text.trim().toString(),
-        'title': "Mr",
-        'relation_type': "S/O",
-        'ledger_group': "Sundry Debtors",
-        'opening_balance': "0",
-        'opening_type': "Dr",
-      },
-      files: files, // will be empty if no image is selected
-    );
-
-    if (response["status"] == true) {
-      showCustomSnackbarSuccess(context, response['message']);
-      Navigator.pop(context, "New Data");
-    } else {
-      showCustomSnackbarError(context, response['message']);
+    } catch (e) {
+      showCustomSnackbarError(context, "Upload failed: $e");
+      print("❌ Exception while uploading admission: $e");
     }
   }
 
-  Future updateAdmission(List<File> images) async {
-    List<http.MultipartFile> files = [];
+  Future<bool> updateAdmission({
+    List<XFile>? documents, // multiple images/files
+    XFile? profileImage, // optional single profile image
+  }) async {
+    try {
+      final response = await ApiService.uploadFiles(
+        endpoint: 'admissionform/${admissionData!.id}',
+        fields: {
+          'licence_no': Preference.getString(PrefKeys.licenseNo),
+          'branch_id': Preference.getint(PrefKeys.locationId).toString(),
+          'admission_date': DateFormat(
+            'dd/MM/yyyy',
+          ).format(admissionData!.admissionDate!),
+          'student_id': studentIdController.text.trim(),
+          'student_name': studentNameController.text.trim(),
+          'gender': _selectedGender ?? "Male",
+          'marital_status': maritalStatus == 0 ? "Single" : "Married",
+          'aadhar_no': aadharNoController.text.trim(),
+          'caste': _selectedCaste ?? "OBC",
+          'primary_contact_no': contactNoController.text.trim(),
+          'whatsapp_no': whatsapppNoController.text.trim(),
+          'email': emailIdController.text.trim(),
+          'college_name': collegeController.text.trim(),
+          'course': courseController.text.trim(),
+          'date_of_birth': dobDatepicker.text.trim(),
+          'year': yearController.text.trim(),
+          'father_name': fatherNameController.text.trim(),
+          'mother_name': motherNameController.text.trim(),
+          'guardian': guardianNameController.text.trim(),
+          'emergency_no': emergencyNoController.text.trim(),
+          'parent_contect': parentContactController.text.trim(),
+          'permanent_address': permanentAddressController.text.trim(),
+          'permanent_state': stateController.text.trim(),
+          'permanent_city': cityController.text.trim(),
+          'permanent_city_town': permanentareaController.text.trim(),
+          'permanent_pin_code': permanentpinCodeController.text.trim(),
+          'temporary_address': temporaryAddressController.text.trim(),
+          'temporary_state': tempSateController.text.trim(),
+          'temporary_city': tempCityController.text.trim(),
+          'temporary_city_town': temporaryareaController.text.trim(),
+          'temporary_pin_code': temporarypinCodeController.text.trim(),
+          'title': "Mr",
+          'relation_type': "S/O",
+          'ledger_group': "Sundry Debtors",
+          'opening_balance': admissionData!.ledger!.openingBalance ?? "",
+          'opening_type': admissionData!.ledger!.openingType ?? "",
+          '_method': "PUT", // for method override
+        },
+        singleFiles: profileImage != null ? {"image": profileImage} : null,
+        multiFiles:
+            documents != null && documents.isNotEmpty
+                ? {"uplode_file[]": documents}
+                : null,
+      );
 
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
+      if (response["status"] == true) {
+        showCustomSnackbarSuccess(context, response['message']);
+        print("✅ Admission updated successfully!");
+        return true;
+      } else {
+        showCustomSnackbarError(context, response['message']);
+        print("❌ Failed to update admission.");
+        return false;
       }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
-      endpoint: 'admissionform/${admissionData!.id}',
-      fields: {
-        'licence_no': Preference.getString(PrefKeys.licenseNo),
-        'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-        'admission_date': DateFormat(
-          'dd/MM/yyyy',
-        ).format(admissionData!.admissionDate!),
-        'student_id': studentIdController.text.trim().toString(),
-        'student_name': studentNameController.text.trim().toString(),
-        'gender': _selectedGender ?? "Male",
-        'marital_status': maritalStatus == 0 ? "Single" : "Married",
-        'aadhar_no': aadharNoController.text.trim().toString(),
-        'caste': _selectedCaste ?? "OBC",
-        'primary_contact_no': contactNoController.text.trim().toString(),
-        'whatsapp_no': whatsapppNoController.text.trim().toString(),
-        'email': emailIdController.text.trim().toString(),
-        'college_name': collegeController.text.trim().toString(),
-        'course': courseController.text.trim().toString(),
-        'date_of_birth': dobDatepicker.text.trim().toString(),
-        'year': yearController.text.trim().toString(),
-        'father_name': fatherNameController.text.trim().toString(),
-        'mother_name': motherNameController.text.trim().toString(),
-        'guardian': guardianNameController.text.trim().toString(),
-        'emergency_no': emergencyNoController.text.trim().toString(),
-        'parent_contect': parentContactController.text.trim().toString(),
-        'permanent_address': permanentAddressController.text.trim().toString(),
-        'permanent_state': stateController.text.trim().toString(),
-        'permanent_city': cityController.text.trim().toString(),
-        'permanent_city_town': permanentareaController.text.trim().toString(),
-        'permanent_pin_code': permanentpinCodeController.text.trim().toString(),
-        'temporary_address': temporaryAddressController.text.trim().toString(),
-        'temporary_state': tempSateController.text.trim().toString(),
-        'temporary_city': tempCityController.text.trim().toString(),
-        'temporary_city_town': temporaryareaController.text.trim().toString(),
-        'temporary_pin_code': temporarypinCodeController.text.trim().toString(),
-        'title': "Mr",
-        'relation_type': "S/O",
-        'ledger_group': "Sundry Debtors",
-        'opening_balance': admissionData!.ledger!.openingBalance ?? "",
-        'opening_type': admissionData!.ledger!.openingType!,
-        '_method': "PUT",
-      },
-      files: files, // will be empty if no image is selected
-    );
-
-    if (response["status"] == true) {
-      showCustomSnackbarSuccess(context, response['message']);
-      return true;
-    } else {
-      showCustomSnackbarError(context, response['message']);
+    } catch (e) {
+      showCustomSnackbarError(context, "Update failed: $e");
+      print("❌ Exception while updating admission: $e");
       return false;
     }
   }
@@ -1055,9 +1137,20 @@ class _CreateHostelersState extends State<CreateHostelers> {
               ),
               ElevatedButton(
                 child: const Text('Confirm'),
-                onPressed: () {
+                onPressed: () async {
                   Navigator.of(dialogContext).pop(true);
-                  postAdmission([]);
+
+                  // multiple documents (XFile)
+                  final List<XFile> documents = _documentImages;
+
+                  // single profile image (XFile)
+                  final XFile? profile = _profileImage;
+
+                  // Call the new cross-platform uploader
+                  await postAdmission(
+                    documents: documents,
+                    profileImage: profile,
+                  );
                 },
               ),
             ],
@@ -1065,7 +1158,15 @@ class _CreateHostelersState extends State<CreateHostelers> {
         },
       );
     } else {
-      postAdmission([]);
+      // Convert List<XFile> → List<File>
+      // multiple documents (XFile)
+      final List<XFile> documents = _documentImages;
+
+      // single profile image (XFile)
+      final XFile? profile = _profileImage;
+
+      // Call the new cross-platform uploader
+      await postAdmission(documents: documents, profileImage: profile);
     }
   }
 }

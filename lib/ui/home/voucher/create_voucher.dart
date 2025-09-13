@@ -10,6 +10,7 @@ import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/container.dart';
 import 'package:dorm_sync/utils/date_change.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/file_saver.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
@@ -17,6 +18,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -83,6 +85,22 @@ class _CreateVoucherState extends State<CreateVoucher> {
   List<ReceivedListModel> feesReceiveList = [];
   List<VoucherModel> voucherList = [];
 
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _documentImages = []; // Multiple docs
+  List<String> _documentImageUrls = [];
+
+  // ------------ Pick Multiple Docs ------------
+  Future<void> _pickDocumentImages() async {
+    try {
+      final docs = await _picker.pickMultiImage();
+      if (docs.isNotEmpty) {
+        setState(() => _documentImages.addAll(docs));
+      }
+    } catch (e) {
+      print("Failed to pick docs: $e");
+    }
+  }
+
   @override
   void initState() {
     Future.delayed(Duration.zero, () {
@@ -99,12 +117,14 @@ class _CreateVoucherState extends State<CreateVoucher> {
         payModeBalance = double.parse(
           voucherData!.paymentBalance?.toString() ?? "0",
         );
+        _documentImageUrls = voucherData?.uplodeFile?.cast<String>() ?? [];
         amountController.text = voucherData!.amount?.toString() ?? "0";
         narrationController.text = voucherData!.narration?.toString() ?? "0";
         paidByController.text = voucherData!.paidBy?.toString() ?? "0";
         remarkController.text = voucherData!.remark?.toString() ?? "0";
         payLedgerId = int.tryParse(voucherData!.payLedgerId!);
         accLedgerId = int.tryParse(voucherData!.accLedgerId!);
+        setState(() {});
       } else {
         getVoucherId().then((_) {
           setState(() {});
@@ -574,20 +594,39 @@ class _CreateVoucherState extends State<CreateVoucher> {
               ],
               context: context,
             ),
+            SizedBox(height: Sizes.height * .03),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Documents"),
+              onPressed: _pickDocumentImages,
+            ),
+            SizedBox(height: 10),
+            DocumentImageGrid(
+              networkUrls: _documentImageUrls,
+              localFiles: _documentImages.map((doc) => File(doc.path)).toList(),
+            ),
+
+            SizedBox(height: Sizes.height * .05),
+
             SizedBox(height: Sizes.height * 0.05),
             Center(
               child: DefaultButton(
                 text: voucherData == null ? "Create" : "Update",
                 hight: 40,
                 width: 150,
-                onTap: () {
+                onTap: () async {
                   if (accLedgerId == payLedgerId) {
                     showCustomSnackbarError(
                       context,
                       "Account Head and Payment Mode must be diffrent.",
                     );
                   } else {
-                    voucherData != null ? updateVoucher([]) : postVoucher([]);
+                    // multiple documents (XFile)
+                    final List<XFile> documents = _documentImages;
+
+                    voucherData != null
+                        ? await updateVoucher(documents)
+                        : postVoucher(documents);
                   }
                 },
               ),
@@ -617,21 +656,13 @@ class _CreateVoucherState extends State<CreateVoucher> {
     }
   }
 
-  Future postVoucher(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future postVoucher(List<XFile>? documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'voucher',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"document[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -649,7 +680,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'paid_by': paidByController.text.toString(),
         'remark': remarkController.text.trim().toString(),
       },
-      files: files, // will be empty if no image is selected
+      // files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {
@@ -660,22 +691,15 @@ class _CreateVoucherState extends State<CreateVoucher> {
     }
   }
 
-  Future updateVoucher(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future updateVoucher(List<XFile> documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint:
           'voucher/${voucherData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
+
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"document[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -694,7 +718,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
         'remark': remarkController.text.trim().toString(),
         '_method': "PUT",
       },
-      files: files, // will be empty if no image is selected
+      // files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {

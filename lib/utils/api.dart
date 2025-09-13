@@ -1,13 +1,20 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
+import 'dart:io' show File;
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:mime/mime.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ApiService {
   static const String baseurl = "https://api.dormsync.com/api";
 
+  // ---------------- Fetch ----------------
   static Future fetchData(String endpoint) async {
     final response = await http.get(
       Uri.parse('$baseurl/$endpoint'),
@@ -23,6 +30,7 @@ class ApiService {
     }
   }
 
+  // ---------------- Post ----------------
   static Future postData(String endpoint, Map<String, dynamic> data) async {
     try {
       final response = await http.post(
@@ -37,13 +45,10 @@ class ApiService {
 
       print(response.body);
       if (response.statusCode == 200) {
-        if (response.body.isNotEmpty) {
-          return json.decode(response.body);
-        } else {
-          throw Exception('Response body is empty');
-        }
+        return response.body.isNotEmpty
+            ? json.decode(response.body)
+            : throw Exception('Response body is empty');
       } else {
-        print(response.body);
         throw Exception('Failed to post data: ${response.statusCode}');
       }
     } catch (e) {
@@ -65,11 +70,9 @@ class ApiService {
         body: jsonEncode(data),
       );
       if (response.statusCode == 200) {
-        if (response.body.isNotEmpty) {
-          return json.decode(response.body);
-        } else {
-          throw Exception('Response body is empty');
-        }
+        return response.body.isNotEmpty
+            ? json.decode(response.body)
+            : throw Exception('Response body is empty');
       } else {
         throw Exception('Failed to post data: ${response.statusCode}');
       }
@@ -78,6 +81,7 @@ class ApiService {
     }
   }
 
+  // ---------------- Delete ----------------
   static Future deleteData(String endpoint) async {
     try {
       final response = await http.delete(
@@ -99,14 +103,36 @@ class ApiService {
     }
   }
 
-  static Future uploadMultipleFiles({
+  // ---------------- File Conversion ----------------
+  static Future<http.MultipartFile> toMultipartFile(
+    XFile file,
+    String fieldName,
+  ) async {
+    if (kIsWeb) {
+      final bytes = await file.readAsBytes();
+      final mimeType = lookupMimeType(file.name) ?? 'application/octet-stream';
+      return http.MultipartFile.fromBytes(
+        fieldName,
+        bytes,
+        filename: file.name,
+        contentType: MediaType.parse(mimeType),
+      );
+    } else {
+      return await http.MultipartFile.fromPath(fieldName, file.path);
+    }
+  }
+
+  // ---------------- Universal Uploader ----------------
+  static Future<Map<String, dynamic>> uploadFiles({
     required String endpoint,
     required Map<String, String> fields,
-    required List<http.MultipartFile> files,
+    Map<String, XFile?>? singleFiles, // e.g. {"profile": image}
+    Map<String, List<XFile>>? multiFiles, // e.g. {"upload_file": docs}
+    String method = 'POST',
   }) async {
     try {
-      var uri = Uri.parse('$baseurl/$endpoint');
-      var request = http.MultipartRequest('POST', uri);
+      final uri = Uri.parse('$baseurl/$endpoint');
+      final request = http.MultipartRequest(method, uri);
 
       request.headers.addAll({
         'Authorization': 'Bearer ${Preference.getString(PrefKeys.token)}',
@@ -115,23 +141,66 @@ class ApiService {
 
       request.fields.addAll(fields);
 
-      for (var file in files) {
-        request.files.add(file);
+      // Handle single files
+      if (singleFiles != null) {
+        for (final entry in singleFiles.entries) {
+          if (entry.value != null) {
+            request.files.add(await toMultipartFile(entry.value!, entry.key));
+          }
+        }
       }
 
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
+      // Handle multiple files
+      if (multiFiles != null) {
+        for (final entry in multiFiles.entries) {
+          for (final file in entry.value) {
+            request.files.add(await toMultipartFile(file, entry.key));
+          }
+        }
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
-        throw Exception('Upload failed: ${response.body}');
+        throw Exception(
+          'Upload failed: ${response.statusCode} → ${response.body}',
+        );
       }
     } catch (e) {
       throw Exception('Upload error: $e');
     }
   }
 
+  // ---------------- Profile Upload (wrapper) ----------------
+  static Future<bool> uploadProfile({
+    required String licenceNo,
+    required int branchId,
+    required XFile? pickedImage,
+  }) async {
+    try {
+      final response = await uploadFiles(
+        endpoint: "profile",
+        fields: {"licence_no": licenceNo, "branch_id": branchId.toString()},
+        singleFiles: {"profile": pickedImage},
+      );
+
+      if (response["status"] == true) {
+        debugPrint("✅ Profile Upload Success: ${response.toString()}");
+        return true;
+      } else {
+        debugPrint("❌ Profile Upload Failed: ${response.toString()}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ Error uploading profile: $e");
+      return false;
+    }
+  }
+
+  // ---------------- Misc ----------------
   static Future postMisc(int id, String name, context, groupList) async {
     var response = await ApiService.postData('misc', {
       'licence_no': Preference.getString(PrefKeys.licenseNo),

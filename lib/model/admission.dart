@@ -1,9 +1,4 @@
-// To parse this JSON data, do
-//
-//     final AdmissionList = admissionListFromJson(jsonString);
-
 import 'dart:convert';
-
 import 'package:dorm_sync/model/branches.dart';
 import 'package:dorm_sync/model/ledger.dart';
 import 'package:intl/intl.dart';
@@ -43,6 +38,8 @@ class AdmissionList {
   String? permanentAddress;
   String? permanentState;
   String? permanentCity;
+  String? image;
+  List<String>? uplodeFile;
   String? permanentCityTown;
   String? permanentPinCode;
   String? temporaryAddress;
@@ -69,6 +66,8 @@ class AdmissionList {
     this.whatsappNo,
     this.email,
     this.collegeName,
+    this.image,
+    this.uplodeFile,
     this.course,
     this.dateOfBirth,
     this.year,
@@ -92,55 +91,73 @@ class AdmissionList {
     this.ledger,
   });
 
-  factory AdmissionList.fromJson(Map<String, dynamic> json) => AdmissionList(
-    id: json["id"],
-    licenceNo: json["licence_no"],
-    branchId: json["branch_id"],
-    admissionDate:
-        json["admission_date"] == null
-            ? null
-            : DateFormat('dd/MM/yyyy').parse(json["admission_date"]),
-    studentId: json["student_id"].toString(),
-    studentName: json["student_name"],
-    gender: json["gender"],
-    maritalStatus: json["marital_status"],
-    aadharNo: json["aadhar_no"],
-    caste: json["caste"],
-    primaryContactNo: json["primary_contact_no"],
-    whatsappNo: json["whatsapp_no"],
-    email: json["email"],
-    collegeName: json["college_name"],
-    course: json["course"],
-    dateOfBirth:
-        json["date_of_birth"] == null
-            ? null
-            : DateFormat('dd/MM/yyyy').parse(json["date_of_birth"]),
-    year: json["year"],
-    fatherName: json["father_name"],
-    motherName: json["mother_name"],
-    parentContect: json["parent_contect"],
-    guardian: json["guardian"],
-    emergencyNo: json["emergency_no"],
-    permanentAddress: json["permanent_address"],
-    permanentState: json["permanent_state"],
-    permanentCity: json["permanent_city"],
-    permanentCityTown: json["permanent_city_town"],
-    permanentPinCode: json["permanent_pin_code"],
-    temporaryAddress: json["temporary_address"],
-    temporaryState: json["temporary_state"],
-    temporaryCity: json["temporary_city"],
-    temporaryCityTown: json["temporary_city_town"],
-    temporaryPinCode: json["temporary_pin_code"],
-    activeStatus: json["active_status"].toString(),
-    branch: json["branch"] == null ? null : BranchList.fromJson(json["branch"]),
-    ledger: json["ledger"] == null ? null : LedgerList.fromJson(json["ledger"]),
-  );
+  factory AdmissionList.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedFiles;
+    final dynamic uploadedFiles = json["uplode_file"];
+
+    if (uploadedFiles is List) {
+      // Case 1: The value is already a List (which is ideal).
+      parsedFiles = uploadedFiles.cast<String>();
+    } else if (uploadedFiles is String && uploadedFiles.isNotEmpty) {
+      // Case 2: The value is a stringified JSON array.
+      try {
+        parsedFiles = List<String>.from(jsonDecode(uploadedFiles));
+      } catch (e) {
+        // Handle parsing errors gracefully.
+        print("Error decoding uplode_file: $e");
+      }
+    }
+
+    return AdmissionList(
+      id: json["id"],
+      licenceNo: json["licence_no"],
+      branchId: json["branch_id"],
+      admissionDate: json["admission_date"] == null
+          ? null
+          : DateFormat('dd/MM/yyyy').parse(json["admission_date"]),
+      studentId: json["student_id"].toString(),
+      studentName: json["student_name"],
+      gender: json["gender"],
+      maritalStatus: json["marital_status"],
+      aadharNo: json["aadhar_no"],
+      caste: json["caste"],
+      primaryContactNo: json["primary_contact_no"],
+      whatsappNo: json["whatsapp_no"],
+      email: json["email"],
+      image: json["image"],
+      uplodeFile: parsedFiles, // Use the safely parsed list here
+      collegeName: json["college_name"],
+      course: json["course"],
+      dateOfBirth: json["date_of_birth"] == null
+          ? null
+          : DateFormat('dd/MM/yyyy').parse(json["date_of_birth"]),
+      year: json["year"],
+      fatherName: json["father_name"],
+      motherName: json["mother_name"],
+      parentContect: json["parent_contect"],
+      guardian: json["guardian"],
+      emergencyNo: json["emergency_no"],
+      permanentAddress: json["permanent_address"],
+      permanentState: json["permanent_state"],
+      permanentCity: json["permanent_city"],
+      permanentCityTown: json["permanent_city_town"],
+      permanentPinCode: json["permanent_pin_code"],
+      temporaryAddress: json["temporary_address"],
+      temporaryState: json["temporary_state"],
+      temporaryCity: json["temporary_city"],
+      temporaryCityTown: json["temporary_city_town"],
+      temporaryPinCode: json["temporary_pin_code"],
+      activeStatus: json["active_status"].toString(),
+      branch: json["branch"] == null ? null : BranchList.fromJson(json["branch"]),
+      ledger: json["ledger"] == null ? null : LedgerList.fromJson(json["ledger"]),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "id": id,
     "licence_no": licenceNo,
     "branch_id": branchId,
-    "admission_date": DateFormat('dd/MM/yyyy').format(admissionDate!),
+    "admission_date": admissionDate != null ? DateFormat('dd/MM/yyyy').format(admissionDate!) : null,
     "student_id": studentId,
     "student_name": studentName,
     "gender": gender,
@@ -151,8 +168,11 @@ class AdmissionList {
     "whatsapp_no": whatsappNo,
     "email": email,
     "college_name": collegeName,
+    "image": image,
+    // Safely encode the list back into a JSON string
+    "uplode_file": uplodeFile != null ? jsonEncode(uplodeFile) : null,
     "course": course,
-    "date_of_birth": DateFormat('dd/MM/yyyy').format(dateOfBirth!),
+    "date_of_birth": dateOfBirth != null ? DateFormat('dd/MM/yyyy').format(dateOfBirth!) : null,
     "year": year,
     "father_name": fatherName,
     "mother_name": motherName,

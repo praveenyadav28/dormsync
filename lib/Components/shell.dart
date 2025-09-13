@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:dorm_sync/Components/route_tracker.dart';
 import 'package:dorm_sync/Components/section_navigator.dart';
 import 'package:dorm_sync/ui/home/attendence/add_hostler.dart';
@@ -48,6 +46,7 @@ import 'package:dorm_sync/ui/home/reports/leave_report.dart';
 import 'package:dorm_sync/ui/home/reports/student_history.dart';
 import 'package:dorm_sync/ui/onboarding/splash.dart';
 import 'package:dorm_sync/ui/utilities/session.dart';
+import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/decoration.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -55,7 +54,6 @@ import 'package:dorm_sync/utils/navigations.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/textstyle.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -66,15 +64,53 @@ class Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<Shell> {
-  XFile? _image;
+  XFile? _image; // for picked image
+  String? _profileUrl; // for API image URL
   final ImagePicker _picker = ImagePicker();
-
   Future<void> _pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      setState(() {
-        _image = image;
-      });
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() => _image = image);
+
+        final licenceNo = Preference.getString(PrefKeys.licenseNo);
+        final branchId = Preference.getint(PrefKeys.locationId);
+
+        // Upload using the universal uploader
+        final uploaded = await ApiService.uploadFiles(
+          endpoint: "profile",
+          fields: {"licence_no": licenceNo, "branch_id": branchId.toString()},
+          singleFiles: {"profile": image},
+        );
+
+        if (uploaded["status"] == true) {
+          _loadProfile(); // refresh from API
+        } else {
+          debugPrint(
+            "❌ Upload failed: ${uploaded["message"] ?? "Unknown error"}",
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ Error picking or uploading image: $e");
+    }
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final data = await ApiService.fetchData(
+        "profile?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+      );
+
+      if (data['status'] == true &&
+          data['data'] != null &&
+          data['data'].isNotEmpty) {
+        setState(() {
+          _profileUrl = data['data'][0]["profile"];
+        });
+      }
+    } catch (e) {
+      debugPrint("❌ Error loading profile: $e");
     }
   }
 
@@ -200,6 +236,7 @@ class _ShellState extends State<Shell> {
   @override
   void initState() {
     super.initState();
+    _loadProfile();
     _trackers = List.generate(15, (_) => RouteTracker(() => setState(() {})));
   }
 
@@ -311,15 +348,16 @@ class _ShellState extends State<Shell> {
                         child: CircleAvatar(
                           maxRadius: 26,
                           backgroundColor: AppColor.grey,
-
                           backgroundImage:
-                              _image == null
-                                  ? null
-                                  : kIsWeb
-                                  ? NetworkImage(_image!.path) as ImageProvider
-                                  : FileImage(File(_image!.path)),
+                              _image != null
+                                  ? NetworkImage(
+                                    _image!.path,
+                                  ) // preview picked image
+                                  : _profileUrl != null
+                                  ? NetworkImage(_profileUrl!) // show API image
+                                  : null,
                           child:
-                              _image == null
+                              (_image == null && _profileUrl == null)
                                   ? Icon(
                                     Icons.camera_alt,
                                     color: AppColor.black81,
@@ -327,14 +365,16 @@ class _ShellState extends State<Shell> {
                                   : null,
                         ),
                       ),
-                      InkWell(
-                        onTap: _pickImage,
-                        child: Image.asset(Images.edittool, height: 18),
-                      ),
+                      (_image == null && _profileUrl == null)
+                          ? InkWell(
+                            onTap: _pickImage,
+                            child: Image.asset(Images.edittool, height: 18),
+                          )
+                          : Container(),
                     ],
                   ),
                   Text(
-                    "Utkarsh Boy Pg Hostel",
+                    Preference.getString(PrefKeys.branchName),
                     style: TextStyle(fontSize: 12, color: AppColor.black),
                   ),
                 ],

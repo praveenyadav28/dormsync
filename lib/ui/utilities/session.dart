@@ -2,7 +2,6 @@ import 'package:dorm_sync/ui/onboarding/splash.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
-import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/navigations.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
@@ -168,18 +167,18 @@ class _SessionScreenState extends State<SessionScreen> {
                       ),
                     ),
                   ),
-                  Container(width: 1, height: 45, color: AppColor.background),
-                  Expanded(
-                    child: Text(
-                      'Action',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                  // Container(width: 1, height: 45, color: AppColor.background),
+                  // Expanded(
+                  //   child: Text(
+                  //     'Action',
+                  //     style: TextStyle(
+                  //       color: Colors.white,
+                  //       fontWeight: FontWeight.bold,
+                  //       fontSize: 16,
+                  //     ),
+                  //     textAlign: TextAlign.center,
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -290,58 +289,59 @@ class _SessionScreenState extends State<SessionScreen> {
                           style: const TextStyle(fontSize: 15),
                         ),
                       ),
-                      Container(
-                        width: 1,
-                        height: 45,
-                        color: const Color.fromARGB(255, 182, 181, 181),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: IconButton(
-                          icon: Image.asset(height: 20, Images.delete),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder:
-                                  (dialogContext) => AlertDialog(
-                                    title: const Text("Warning"),
-                                    content: const Text(
-                                      "Are you sure you want to delete this session?",
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed:
-                                            () =>
-                                                Navigator.of(
-                                                  dialogContext,
-                                                ).pop(),
-                                        child: const Text("Cancel"),
-                                      ),
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppColor.red,
-                                        ),
-                                        onPressed: () {
-                                          deleteSession(dateRange['id']!).then((
-                                            value,
-                                          ) {
-                                            loadInitialSession().then((value) {
-                                              setState(() {
-                                                Navigator.of(
-                                                  dialogContext,
-                                                ).pop();
-                                              });
-                                            });
-                                          });
-                                        },
-                                        child: const Text("Delete"),
-                                      ),
-                                    ],
-                                  ),
-                            );
-                          },
-                        ),
-                      ),
+                      // Container(
+                      //   width: 1,
+                      //   height: 45,
+                      //   color: const Color.fromARGB(255, 182, 181, 181),
+                      // ),
+
+                      // Expanded(
+                      //   flex: 1,
+                      //   child: IconButton(
+                      //     icon: Image.asset(height: 20, Images.delete),
+                      //     onPressed: () {
+                      //       showDialog(
+                      //         context: context,
+                      //         builder:
+                      //             (dialogContext) => AlertDialog(
+                      //               title: const Text("Warning"),
+                      //               content: const Text(
+                      //                 "Are you sure you want to delete this session?",
+                      //               ),
+                      //               actions: [
+                      //                 TextButton(
+                      //                   onPressed:
+                      //                       () =>
+                      //                           Navigator.of(
+                      //                             dialogContext,
+                      //                           ).pop(),
+                      //                   child: const Text("Cancel"),
+                      //                 ),
+                      //                 ElevatedButton(
+                      //                   style: ElevatedButton.styleFrom(
+                      //                     backgroundColor: AppColor.red,
+                      //                   ),
+                      //                   onPressed: () {
+                      //                     deleteSession(dateRange['id']!).then((
+                      //                       value,
+                      //                     ) {
+                      //                       loadInitialSession().then((value) {
+                      //                         setState(() {
+                      //                           Navigator.of(
+                      //                             dialogContext,
+                      //                           ).pop();
+                      //                         });
+                      //                       });
+                      //                     });
+                      //                   },
+                      //                   child: const Text("Delete"),
+                      //                 ),
+                      //               ],
+                      //             ),
+                      //       );
+                      //     },
+                      //   ),
+                      // ),
                     ],
                   ),
                 );

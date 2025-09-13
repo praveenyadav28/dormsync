@@ -22,6 +22,7 @@ class VoucherModel {
   int? voucherNo;
   String? paymentMode;
   String? paymentBalance;
+  List<String>? uplodeFile;
   String? accountHead;
   String? accountBalance;
   String? accLedgerId;
@@ -51,6 +52,7 @@ class VoucherModel {
     this.paymentBalance,
     this.accountHead,
     this.accountBalance,
+    this.uplodeFile,
     this.accLedgerId,
     this.payLedgerId,
     this.amount,
@@ -68,36 +70,58 @@ class VoucherModel {
     this.branch,
   });
 
-  factory VoucherModel.fromJson(Map<String, dynamic> json) => VoucherModel(
-    id: json["id"],
-    licenceNo: json["licence_no"],
-    branchId: json["branch_id"],
-    voucherType: json["voucher_type"],
-    voucherDate: json["voucher_date"],
-    voucherNo: json["voucher_no"],
-    paymentMode: json["payment_mode"],
-    paymentBalance: json["payment_balance"].toString(),
-    payLedgerId: json["pay_ladger_id"].toString(),
-    accLedgerId: json["acc_ladger_id"].toString(),
-    accountHead: json["account_head"],
-    accountBalance: json["account_balance"].toString(),
-    amount: json["amount"].toString(),
-    narration: json["narration"],
-    paidBy: json["paid_by"],
-    remark: json["remark"],
-    other1: json["other1"],
-    other2: json["other2"],
-    other3: json["other3"],
-    other4: json["other4"],
-    other5: json["other5"],
-    createdAt:
-        json["created_at"] == null ? null : DateTime.parse(json["created_at"]),
-    updatedAt:
-        json["updated_at"] == null ? null : DateTime.parse(json["updated_at"]),
-    licence: json["licence"] == null ? null : Licence.fromJson(json["licence"]),
-    branch: json["branch"] == null ? null : Branch.fromJson(json["branch"]),
-  );
+  factory VoucherModel.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedFiles;
+    final dynamic uploadedFiles = json["document"];
 
+    if (uploadedFiles is List) {
+      // Case 1: The value is already a List (which is ideal).
+      parsedFiles = uploadedFiles.cast<String>();
+    } else if (uploadedFiles is String && uploadedFiles.isNotEmpty) {
+      // Case 2: The value is a stringified JSON array.
+      try {
+        parsedFiles = List<String>.from(jsonDecode(uploadedFiles));
+      } catch (e) {
+        // Handle parsing errors gracefully.
+        print("Error decoding document: $e");
+      }
+    }
+    return VoucherModel(
+      id: json["id"],
+      licenceNo: json["licence_no"],
+      branchId: json["branch_id"],
+      voucherType: json["voucher_type"],
+      voucherDate: json["voucher_date"],
+      voucherNo: json["voucher_no"],
+      paymentMode: json["payment_mode"],
+      paymentBalance: json["payment_balance"].toString(),
+      uplodeFile: parsedFiles, // Use the safely parsed list here
+      payLedgerId: json["pay_ladger_id"].toString(),
+      accLedgerId: json["acc_ladger_id"].toString(),
+      accountHead: json["account_head"],
+      accountBalance: json["account_balance"].toString(),
+      amount: json["amount"].toString(),
+      narration: json["narration"],
+      paidBy: json["paid_by"],
+      remark: json["remark"],
+      other1: json["other1"],
+      other2: json["other2"],
+      other3: json["other3"],
+      other4: json["other4"],
+      other5: json["other5"],
+      createdAt:
+          json["created_at"] == null
+              ? null
+              : DateTime.parse(json["created_at"]),
+      updatedAt:
+          json["updated_at"] == null
+              ? null
+              : DateTime.parse(json["updated_at"]),
+      licence:
+          json["licence"] == null ? null : Licence.fromJson(json["licence"]),
+      branch: json["branch"] == null ? null : Branch.fromJson(json["branch"]),
+    );
+  }
   Map<String, dynamic> toJson() => {
     "id": id,
     "licence_no": licenceNo,

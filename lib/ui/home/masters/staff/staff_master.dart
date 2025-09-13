@@ -6,6 +6,7 @@ import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/container.dart';
 import 'package:dorm_sync/utils/date_change.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/file_saver.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/sizes.dart';
@@ -13,7 +14,7 @@ import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/statecities.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
 
@@ -41,6 +42,23 @@ class _CreateStaffState extends State<CreateStaff> {
 
   int selectedStatus = 0;
   StaffList? staffData;
+
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _documentImages = []; // Multiple docs
+  List<String> _documentImageUrls = [];
+
+  // ------------ Pick Multiple Docs ------------
+  Future<void> _pickDocumentImages() async {
+    try {
+      final docs = await _picker.pickMultiImage();
+      if (docs.isNotEmpty) {
+        setState(() => _documentImages.addAll(docs));
+      }
+    } catch (e) {
+      print("Failed to pick docs: $e");
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -55,6 +73,7 @@ class _CreateStaffState extends State<CreateStaff> {
       staffNameController.text = staffData!.staffName ?? "";
       fatherNameController.text = staffData!.name ?? "";
       contactNoNameController.text = staffData!.contactNo ?? "";
+      _documentImageUrls = staffData?.uplodeFile?.cast<String>() ?? [];
       emailIdController.text = staffData!.email ?? "";
       whatsapppNoController.text = staffData!.whatsappNo ?? "";
       openingBalanceController.text = staffData!.openingBalance.toString();
@@ -760,13 +779,28 @@ class _CreateStaffState extends State<CreateStaff> {
               ],
               context: context,
             ),
+
+            SizedBox(height: Sizes.height * .03),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.upload_file),
+              label: const Text("Upload Documents"),
+              onPressed: _pickDocumentImages,
+            ),
+            SizedBox(height: 10),
+            DocumentImageGrid(
+              networkUrls: _documentImageUrls,
+              localFiles: _documentImages.map((doc) => File(doc.path)).toList(),
+            ),
+
             SizedBox(height: Sizes.height * .05),
             Center(
               child: DefaultButton(
                 text: staffData == null ? "Create" : 'Update',
                 hight: 40,
                 width: 150,
-                onTap: () {
+                onTap: () async {
+                  // multiple documents (XFile)
+                  final List<XFile> documents = _documentImages;
                   staffData != null
                       ? showDialog(
                         context: context,
@@ -787,7 +821,7 @@ class _CreateStaffState extends State<CreateStaff> {
                                     backgroundColor: AppColor.primary,
                                   ),
                                   onPressed: () async {
-                                    bool success = await updateStaff([]);
+                                    bool success = await updateStaff(documents);
                                     Navigator.of(dialogContext).pop();
                                     if (success) {
                                       Navigator.of(context).pop("New Data");
@@ -798,7 +832,7 @@ class _CreateStaffState extends State<CreateStaff> {
                               ],
                             ),
                       )
-                      : postStaff([]);
+                      : await postStaff(documents);
                 },
               ),
             ),
@@ -809,21 +843,13 @@ class _CreateStaffState extends State<CreateStaff> {
     );
   }
 
-  Future postStaff(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future postStaff(List<XFile>? documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint: 'staff',
+      multiFiles:
+          documents != null && documents.isNotEmpty
+              ? {"uplode_file[]": documents}
+              : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -850,7 +876,7 @@ class _CreateStaffState extends State<CreateStaff> {
         'temporary_address': permanentAddressController.text.trim().toString(),
         'other1': 'STF',
       },
-      files: files, // will be empty if no image is selected
+      // files: files, // will be empty if no image is selected
     );
 
     if (response["status"] == true) {
@@ -861,20 +887,8 @@ class _CreateStaffState extends State<CreateStaff> {
     }
   }
 
-  Future updateStaff(List<File> images) async {
-    List<http.MultipartFile> files = [];
-
-    if (images.isNotEmpty) {
-      for (File image in images) {
-        final file = await http.MultipartFile.fromPath(
-          'upload_file[]',
-          image.path,
-        );
-        files.add(file);
-      }
-    }
-
-    final response = await ApiService.uploadMultipleFiles(
+  Future updateStaff(List<XFile> documents) async {
+    final response = await ApiService.uploadFiles(
       endpoint:
           'staff/${staffData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
       fields: {
@@ -904,7 +918,7 @@ class _CreateStaffState extends State<CreateStaff> {
         'other1': 'STF',
         '_method': "PUT",
       },
-      files: files, // will be empty if no image is selected
+      multiFiles: documents.isNotEmpty ? {"uplode_file[]": documents} : null,
     );
 
     if (response["status"] == true) {

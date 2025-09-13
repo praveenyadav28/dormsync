@@ -26,6 +26,7 @@ class LedgerList {
   dynamic whatsappNo;
   dynamic email;
   String? ledgerGroup;
+  List<String>? uplodeFile;
   String? openingBalance;
   String? openingType;
   String? closingBalance;
@@ -69,6 +70,7 @@ class LedgerList {
     this.aadharNo,
     this.permanentAddress,
     this.state,
+    this.uplodeFile,
     this.city,
     this.cityTownVillage,
     this.pinCode,
@@ -84,41 +86,59 @@ class LedgerList {
     this.temporaryAddress,
   });
 
-  factory LedgerList.fromJson(Map<String, dynamic> json) => LedgerList(
-    id: json["id"],
-    licenceNo: json["licence_no"],
-    branchId: json["branch_id"],
-    studentId: json["student_id"],
-    title: json["title"],
-    ledgerName: json["ledger_name"],
-    relationType: json["relation_type"],
-    name: json["name"],
-    contactNo: json["contact_no"],
-    whatsappNo: json["whatsapp_no"],
-    email: json["email"],
-    ledgerGroup: json["ledger_group"],
-    openingBalance: json["opening_balance"],
-    openingType: json["opening_type"],
-    closingBalance: json["closing_balance"],
-    closingType: json["closing_type"],
-    gstNo: json["gst_no"],
-    aadharNo: json["aadhar_no"],
-    permanentAddress: json["permanent_address"],
-    state: json["state"],
-    city: json["city"],
-    cityTownVillage: json["city_town_village"],
-    pinCode: json["pin_code"],
-    tstate: json["t_state"],
-    tcity: json["t_city"],
-    tcityTownVillage: json["t_city_town_village"],
-    tpinCode: json["t_pin_code"],
-    other1: json["other1"],
-    other2: json["other2"],
-    other3: json["other3"],
-    other4: json["other4"],
-    other5: json["other5"],
-    temporaryAddress: json["temporary_address"],
-  );
+  factory LedgerList.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedFiles;
+    final dynamic uploadedFiles = json["ledger_file"];
+
+    if (uploadedFiles is List) {
+      // Case 1: The value is already a List (which is ideal).
+      parsedFiles = uploadedFiles.cast<String>();
+    } else if (uploadedFiles is String && uploadedFiles.isNotEmpty) {
+      // Case 2: The value is a stringified JSON array.
+      try {
+        parsedFiles = List<String>.from(jsonDecode(uploadedFiles));
+      } catch (e) {
+        // Handle parsing errors gracefully.
+        print("Error decoding ledger_file: $e");
+      }
+    }
+    return LedgerList(
+      id: json["id"],
+      licenceNo: json["licence_no"],
+      branchId: json["branch_id"],
+      studentId: json["student_id"],
+      title: json["title"],
+      ledgerName: json["ledger_name"],
+      relationType: json["relation_type"],
+      name: json["name"],
+      contactNo: json["contact_no"],
+      whatsappNo: json["whatsapp_no"],
+      email: json["email"],
+      ledgerGroup: json["ledger_group"],
+      openingBalance: json["opening_balance"],
+      openingType: json["opening_type"],
+      closingBalance: json["closing_balance"],
+      closingType: json["closing_type"],
+      gstNo: json["gst_no"],
+      aadharNo: json["aadhar_no"],
+      permanentAddress: json["permanent_address"],
+      state: json["state"],
+      uplodeFile: parsedFiles, // Use the safely parsed list here
+      city: json["city"],
+      cityTownVillage: json["city_town_village"],
+      pinCode: json["pin_code"],
+      tstate: json["t_state"],
+      tcity: json["t_city"],
+      tcityTownVillage: json["t_city_town_village"],
+      tpinCode: json["t_pin_code"],
+      other1: json["other1"],
+      other2: json["other2"],
+      other3: json["other3"],
+      other4: json["other4"],
+      other5: json["other5"],
+      temporaryAddress: json["temporary_address"],
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "id": id,

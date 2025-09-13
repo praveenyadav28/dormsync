@@ -321,6 +321,10 @@ class _LoginScreenState extends State<LoginScreen> {
         PrefKeys.coludIdMess,
         response['branch']['other1'] ?? "",
       );
+      Preference.setString(
+        PrefKeys.branchName,
+        response['branch']['branch_name'] ?? "",
+      );
       Preference.setInt(PrefKeys.locationId, response['user']['branch_id']);
       Preference.setInt(PrefKeys.branchLength, _branchList.length);
       showCustomSnackbarSuccess(context, response['message']);

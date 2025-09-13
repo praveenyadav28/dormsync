@@ -1,4 +1,5 @@
 import 'package:dorm_sync/model/attendencemodel.dart';
+import 'package:dorm_sync/ui/home/attendence/attendence_excel.dart';
 import 'package:dorm_sync/ui/home/attendence/dialog.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
@@ -188,16 +189,9 @@ class _HostlerAttendenceListState extends State<HostlerAttendenceList> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
-
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportAttendanceToExcel(studentsList);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),
@@ -369,7 +363,9 @@ class _HostlerAttendenceListState extends State<HostlerAttendenceList> {
   }
 
   Future getAttendenceStudentList(String activeStatus) async {
-    var response = await ApiService.fetchData("attendance?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}");
+    var response = await ApiService.fetchData(
+      "attendance?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       studentsList =
           attendenceListFromJson(

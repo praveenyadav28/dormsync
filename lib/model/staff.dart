@@ -27,6 +27,7 @@ class StaffList {
   String? contactNo;
   dynamic whatsappNo;
   dynamic email;
+  List<String>? uplodeFile;
   String? department;
   String? designation;
   String? joiningDate;
@@ -61,6 +62,7 @@ class StaffList {
     this.email,
     this.department,
     this.designation,
+    this.uplodeFile,
     this.joiningDate,
     this.aadharNo,
     this.permanentAddress,
@@ -80,34 +82,53 @@ class StaffList {
     this.branch,
   });
 
-  factory StaffList.fromJson(Map<String, dynamic> json) => StaffList(
-    id: json["id"],
-    licenceNo: json["licence_no"],
-    branchId: json["branch_id"],
-    title: json["title"],
-    staffId: json["staff_id"].toString(),
-    staffName: json["staff_name"],
-    relationType: json["relation_type"],
-    name: json["name"],
-    contactNo: json["contact_no"],
-    whatsappNo: json["whatsapp_no"],
-    email: json["email"],
-    department: json["department"],
-    designation: json["designation"],
-    joiningDate: json["joining_date"],
-    aadharNo: json["aadhar_no"],
-    permanentAddress: json["permanent_address"],
-    state: json["state"],
-    city: json["city"],
-    openingBalance: json["opening_balance"],
-    openingType: json["opening_type"],
-    cityTownVillage: json["city_town_village"],
-    address: json["address"],
-    pinCode: json["pin_code"],
-    temporaryAddress: json["temporary_address"],
-    licence: json["licence"] == null ? null : Licence.fromJson(json["licence"]),
-    branch: json["branch"] == null ? null : Branch.fromJson(json["branch"]),
-  );
+  factory StaffList.fromJson(Map<String, dynamic> json) {
+    List<String>? parsedFiles;
+    final dynamic uploadedFiles = json["uplode_file"];
+
+    if (uploadedFiles is List) {
+      // Case 1: The value is already a List (which is ideal).
+      parsedFiles = uploadedFiles.cast<String>();
+    } else if (uploadedFiles is String && uploadedFiles.isNotEmpty) {
+      // Case 2: The value is a stringified JSON array.
+      try {
+        parsedFiles = List<String>.from(jsonDecode(uploadedFiles));
+      } catch (e) {
+        // Handle parsing errors gracefully.
+        print("Error decoding uplode_file: $e");
+      }
+    }
+    return StaffList(
+      id: json["id"],
+      licenceNo: json["licence_no"],
+      branchId: json["branch_id"],
+      title: json["title"],
+      staffId: json["staff_id"].toString(),
+      staffName: json["staff_name"],
+      relationType: json["relation_type"],
+      name: json["name"],
+      contactNo: json["contact_no"],
+      whatsappNo: json["whatsapp_no"],
+      email: json["email"],
+      department: json["department"],
+      designation: json["designation"],
+      joiningDate: json["joining_date"],
+      aadharNo: json["aadhar_no"],
+      permanentAddress: json["permanent_address"],
+      state: json["state"],
+      city: json["city"],
+      uplodeFile: parsedFiles, // Use the safely parsed list here
+      openingBalance: json["opening_balance"],
+      openingType: json["opening_type"],
+      cityTownVillage: json["city_town_village"],
+      address: json["address"],
+      pinCode: json["pin_code"],
+      temporaryAddress: json["temporary_address"],
+      licence:
+          json["licence"] == null ? null : Licence.fromJson(json["licence"]),
+      branch: json["branch"] == null ? null : Branch.fromJson(json["branch"]),
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     "id": id,
