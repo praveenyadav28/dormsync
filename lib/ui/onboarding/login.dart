@@ -322,10 +322,27 @@ class _LoginScreenState extends State<LoginScreen> {
         response['branch']['other1'] ?? "",
       );
       Preference.setString(
+        PrefKeys.hostlerLimit,
+        response['branch']['other5'] ?? "",
+      );
+      Preference.setBool(
+        PrefKeys.isMain,
+        response['branch']['other3'] != "0" ? true : false,
+      );
+      Preference.setString(
+        PrefKeys.isPG,
+        response['branch']['other4'] ?? "Hostel",
+      );
+      Preference.setString(
+        PrefKeys.branchName,
+        response['branch']['branch_name'] ?? "",
+      );
+      Preference.setString(
         PrefKeys.branchName,
         response['branch']['branch_name'] ?? "",
       );
       Preference.setInt(PrefKeys.locationId, response['user']['branch_id']);
+      Preference.setString(PrefKeys.rights, response['user']['rights']);
       Preference.setInt(PrefKeys.branchLength, _branchList.length);
       showCustomSnackbarSuccess(context, response['message']);
       await fetchAndSaveActiveSessionId();

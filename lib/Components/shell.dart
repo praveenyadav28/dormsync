@@ -13,6 +13,8 @@ import 'package:dorm_sync/ui/home/fees/fees.dart';
 import 'package:dorm_sync/ui/home/fees/fees_list.dart';
 import 'package:dorm_sync/ui/home/fees/fees_recieve.dart';
 import 'package:dorm_sync/ui/home/fees/fees_recieve_list.dart';
+import 'package:dorm_sync/ui/home/fees/meter_list.dart';
+import 'package:dorm_sync/ui/home/fees/meter_reading.dart';
 import 'package:dorm_sync/ui/home/hostelers/create_hostelers.dart';
 import 'package:dorm_sync/ui/home/hostelers/hostelers_list.dart';
 import 'package:dorm_sync/ui/home/Masters/branch/branch_list.dart';
@@ -25,6 +27,8 @@ import 'package:dorm_sync/ui/home/masters/item/item_list.dart';
 import 'package:dorm_sync/ui/home/masters/item/item_master.dart';
 import 'package:dorm_sync/ui/home/masters/ledger/ledger_list.dart';
 import 'package:dorm_sync/ui/home/masters/ledger/ledger_master.dart';
+import 'package:dorm_sync/ui/home/masters/user/user_list.dart';
+import 'package:dorm_sync/ui/home/masters/user/user_master.dart';
 import 'package:dorm_sync/ui/home/nodues/nodues.dart';
 import 'package:dorm_sync/ui/home/profile/profile.dart';
 import 'package:dorm_sync/ui/home/reports/bank_report.dart';
@@ -136,7 +140,7 @@ class _ShellState extends State<Shell> {
     'Mess Attendance',
     'Vouchers',
     'CRM',
-    'Nodues',
+    'No Dues',
     "Utilities",
     'Log out',
   ];
@@ -188,13 +192,16 @@ class _ShellState extends State<Shell> {
       '/create Item': (ctx) => const CreateItem(),
       '/ledger Master': (ctx) => const LedgerListScreen(),
       '/create Ledger': (ctx) => const CreateLedger(),
-      '/user Master': (ctx) => const DashboardScreen(),
+      '/user Master': (ctx) => const UserListScreen(),
+      '/create User': (ctx) => const CreateUser(),
     },
     {
       '/fees List': (ctx) => const FeesListScreen(),
       '/fees Entry': (ctx) => const FeesEntry(),
       '/fees Receive List': (ctx) => const FeesReceiveListScreen(),
       '/fees Receive': (ctx) => const FeesReceive(),
+      '/meter Reading List': (ctx) => const MeterListScreen(),
+      '/meter Reading': (ctx) =>  MeterReadingAdd(),
     },
     {
       '/': (ctx) => const VisitorListScreen(),
@@ -234,10 +241,21 @@ class _ShellState extends State<Shell> {
   ];
 
   @override
+  @override
   void initState() {
     super.initState();
     _loadProfile();
     _trackers = List.generate(15, (_) => RouteTracker(() => setState(() {})));
+  }
+
+  bool hasAccess(String menu) {
+    final rights = Preference.getString(PrefKeys.rights);
+    if (rights.isEmpty) return false;
+
+    final rightsList = rights.split(',').map((e) => e.trim()).toList();
+
+    if (rightsList.contains("[All]")) return true; // ✅ super-admin
+    return rightsList.contains(menu);
   }
 
   StyleText textstyles = StyleText();
@@ -309,34 +327,35 @@ class _ShellState extends State<Shell> {
                 ),
               ),
               Spacer(),
-              Column(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    margin: EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: AppColor.white,
-                      boxShadow: [
-                        BoxShadow(
-                          spreadRadius: 1,
-                          color: AppColor.black81,
-                          blurRadius: 4,
+              if (Preference.getString(PrefKeys.isPG) == "Hostel")
+                Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      margin: EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: AppColor.white,
+                        boxShadow: [
+                          BoxShadow(
+                            spreadRadius: 1,
+                            color: AppColor.black81,
+                            blurRadius: 4,
+                          ),
+                        ],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        Preference.getString(PrefKeys.sessionDate),
+                        style: TextStyle(
+                          color: AppColor.black,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
                         ),
-                      ],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      Preference.getString(PrefKeys.sessionDate),
-                      style: TextStyle(
-                        color: AppColor.black,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
               SizedBox(width: 30),
               Column(
                 children: [
@@ -398,6 +417,12 @@ class _ShellState extends State<Shell> {
           child: ListView.builder(
             itemCount: _titles.length,
             itemBuilder: (context, i) {
+              final title = _titles[i];
+              // skip Dashboard and Logout
+              if (i != 0 && i != 14 && !hasAccess(title)) {
+                return const SizedBox.shrink(); // hide menu if no access
+              }
+
               final isSelected = _tab == i;
               final onHover = _isHovering[i];
               return MouseRegion(
@@ -417,113 +442,114 @@ class _ShellState extends State<Shell> {
                       // Reports tab clicked — show popup
                       final selected = await showMenu<String>(
                         context: context,
-                        position: RelativeRect.fromLTRB(
-                          0,
-                          100,
-                          0,
-                          0,
-                        ), // adjust as needed
+                        position: RelativeRect.fromLTRB(0, 100, 0, 0),
                         items: [
-                          PopupMenuItem(
-                            value: '/student Report',
-                            child: Text('Student Report'),
-                          ),
-                          PopupMenuItem(
-                            value: '/leave report',
-                            child: Text('Leave Report'),
-                          ),
-                          PopupMenuItem(
-                            value: '/fees report',
-                            child: Text('Fees Report'),
-                          ),
-                          PopupMenuItem(
-                            value: '/ledger report',
-                            child: Text('Ledger Report'),
-                          ),
-                          PopupMenuItem(
-                            value: '/bank report',
-                            child: Text('Bank Report'),
-                          ),
+                          if (hasAccess("Student Report"))
+                            PopupMenuItem(
+                              value: '/student Report',
+                              child: Text('Student Report'),
+                            ),
+                          if (hasAccess("Leave Report"))
+                            PopupMenuItem(
+                              value: '/leave report',
+                              child: Text('Leave Report'),
+                            ),
+                          if (hasAccess("Fees Report"))
+                            PopupMenuItem(
+                              value: '/fees report',
+                              child: Text('Fees Report'),
+                            ),
+                          if (hasAccess("Ledger Report"))
+                            PopupMenuItem(
+                              value: '/ledger report',
+                              child: Text('Ledger Report'),
+                            ),
+                          if (hasAccess("Bank Report"))
+                            PopupMenuItem(
+                              value: '/bank report',
+                              child: Text('Bank Report'),
+                            ),
                         ],
                       );
 
                       if (selected != null) {
-                        setState(() {
-                          _tab = 1; // Set Reports tab
-                        });
+                        setState(() => _tab = 1);
                         _navKeys[1].currentState?.pushReplacementNamed(
                           selected,
                         );
                       }
                     } else if (i == 4) {
-                      // Reports tab clicked — show popup
-                      // Reports tab clicked — show popup
+                      // Masters
                       final selected = await showMenu<String>(
                         context: context,
-                        position: RelativeRect.fromLTRB(
-                          0,
-                          140,
-                          0,
-                          0,
-                        ), // adjust as needed
+                        position: RelativeRect.fromLTRB(0, 140, 0, 0),
                         items: [
-                          PopupMenuItem(
-                            value: '/branch Master',
-                            child: Text('Branch Master'),
-                          ),
-                          PopupMenuItem(
-                            value: '/staff Master',
-                            child: Text('Staff Master'),
-                          ),
-                          PopupMenuItem(
-                            value: '/ledger Master',
-                            child: Text('Ledger Master'),
-                          ),
-                          PopupMenuItem(
-                            value: '/item Master',
-                            child: Text('Item Master'),
-                          ),
-                          // PopupMenuItem(
-                          //   value: '/user Master',
-                          //   child: Text('User Master'),
-                          // ),
+                          if (Preference.getBool(PrefKeys.isMain) &&
+                              hasAccess("Branch Master"))
+                            PopupMenuItem(
+                              value: '/branch Master',
+                              child: Text('Branch Master'),
+                            ),
+                          if (hasAccess("Staff Master"))
+                            PopupMenuItem(
+                              value: '/staff Master',            
+                              child: Text('Staff Master'),
+                            ),
+                          if (hasAccess("Ledger Master"))
+                            PopupMenuItem(
+                              value: '/ledger Master',
+                              child: Text('Ledger Master'),
+                            ),
+                          if (hasAccess("Item Master"))
+                            PopupMenuItem(
+                              value: '/item Master',
+                              child: Text('Item Master'),
+                            ),
+                          if (hasAccess("User Master"))
+                            PopupMenuItem(
+                              value: '/user Master',
+                              child: Text('User Master'),
+                            ),
                         ],
                       );
 
                       if (selected != null) {
-                        setState(() {
-                          _tab = 4; // Set Reports tab
-                        });
+                        setState(() => _tab = 4);
                         _navKeys[4].currentState?.pushReplacementNamed(
                           selected,
                         );
                       }
                     } else if (i == 5) {
+                      // Fees
                       final selected = await showMenu<String>(
                         context: context,
                         position: RelativeRect.fromLTRB(0, 240, 0, 0),
                         items: [
+                          if (hasAccess("Fees Entry"))
+                            PopupMenuItem(
+                              value: '/fees List',
+                              child: Text('Fees Entry'),
+                            ),
+                          if (hasAccess("Fees Receive"))
+                            PopupMenuItem(
+                              value: '/fees Receive List',
+                              child: Text('Fees Receive'),
+                            ),
                           PopupMenuItem(
-                            value: '/fees List',
-                            child: Text('Fees Entry'),
-                          ),
-                          PopupMenuItem(
-                            value: '/fees Receive List',
-                            child: Text('Fees Receive'),
+                            value: '/meter Reading List',
+                            child: Text('Meter Reading'),
                           ),
                         ],
                       );
 
                       if (selected != null) {
-                        setState(() {
-                          _tab = 5; // Set Reports tab
-                        });
+                        setState(() => _tab = 5);
                         _navKeys[5].currentState?.pushReplacementNamed(
                           selected,
                         );
                       }
                     } else if (i == 13) {
-                      // Reports tab clicked — show popup
+                      // Utilities
                       final selected = await showMenu<String>(
                         context: context,
                         position: RelativeRect.fromLTRB(
@@ -533,25 +559,27 @@ class _ShellState extends State<Shell> {
                           100,
                         ),
                         items: [
-                          PopupMenuItem(
-                            value: '/session',
-                            child: Text('Session'),
-                          ),
-                          PopupMenuItem(
-                            value: '/deactivated List',
-                            child: Text('Deactivate Student'),
-                          ),
-                          PopupMenuItem(
-                            value: '/reactivated List',
-                            child: Text('Re-activate Student'),
-                          ),
+                          if (hasAccess("Session") &&
+                              Preference.getString(PrefKeys.isPG) == "Hostel")
+                            PopupMenuItem(
+                              value: '/session',
+                              child: Text('Session'),
+                            ),
+                          if (hasAccess("Deactivate Student"))
+                            PopupMenuItem(
+                              value: '/deactivated List',
+                              child: Text('Deactivate Student'),
+                            ),
+                          if (hasAccess("Re-activate Student"))
+                            PopupMenuItem(
+                              value: '/reactivated List',
+                              child: Text('Re-activate Student'),
+                            ),
                         ],
                       );
 
                       if (selected != null) {
-                        setState(() {
-                          _tab = 13; // Set Reports tab
-                        });
+                        setState(() => _tab = 13);
                         _navKeys[13].currentState?.pushReplacementNamed(
                           selected,
                         );
@@ -566,7 +594,6 @@ class _ShellState extends State<Shell> {
                       });
                     }
                   },
-
                   child:
                       i == 0
                           ? Container()

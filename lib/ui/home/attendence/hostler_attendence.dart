@@ -1,5 +1,4 @@
 import 'package:dorm_sync/model/attendencemodel.dart';
-import 'package:dorm_sync/ui/home/attendence/attendence_excel.dart';
 import 'package:dorm_sync/ui/home/attendence/dialog.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
@@ -185,16 +184,7 @@ class _HostlerAttendenceListState extends State<HostlerAttendenceList> {
                     Spacer(),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () async {
-                          await exportAttendanceToExcel(studentsList);
-                        },
-                        icon: Image.asset(Images.excel),
-                      ),
-                    ),
+                   
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(3),

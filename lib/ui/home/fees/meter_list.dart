@@ -1,25 +1,26 @@
-import 'package:dorm_sync/model/branches.dart';
-import 'package:dorm_sync/model/fees_receive.dart';
-import 'package:dorm_sync/ui/excel/fees_recieve_excel.dart';
-import 'package:dorm_sync/ui/home/fees/fees_recieve_pdf.dart';
+import 'package:dorm_sync/model/meterreading_model.dart';
+import 'package:dorm_sync/ui/excel/fees_entry_excel.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
+import 'package:dorm_sync/utils/field_cover.dart';
 import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/reuse.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
+import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
-class FeesReceiveListScreen extends StatefulWidget {
-  const FeesReceiveListScreen({super.key});
+class MeterListScreen extends StatefulWidget {
+  const MeterListScreen({super.key});
 
   @override
-  State<FeesReceiveListScreen> createState() => _FeesReceiveListScreenState();
+  State<MeterListScreen> createState() => _MeterListScreenState();
 }
 
-class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
-  List<ReceivedListModel> feesReceiveList = [];
+class _MeterListScreenState extends State<MeterListScreen> {
+  List<MeterReadingModel> feesList = [];
 
   // Store the filter values
   String _searchQuery = '';
@@ -28,16 +29,16 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
   final List<int> _pageSizeOptions = [5, 10, 20, 50]; // Page size options
 
   // Function to filter the data
-  List<ReceivedListModel> get _filteredData {
-    List<ReceivedListModel> result =
-        feesReceiveList; // Initialize with unfiltered data
+  List<MeterReadingModel> get _filteredData {
+    List<MeterReadingModel> result =
+        feesList; // Initialize with unfiltered data
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
 
       result =
-          feesReceiveList.where((feesReceive) {
-            final Map<String, dynamic> feesReceiveMap = feesReceive.toJson();
-            return feesReceiveMap.values.any((value) {
+          feesList.where((item) {
+            final Map<String, dynamic> itemMap = item.toJson();
+            return itemMap.values.any((value) {
               return value?.toString().toLowerCase().contains(query) ?? false;
             });
           }).toList();
@@ -45,8 +46,9 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
     return result;
   }
 
+  final TextEditingController pricePerUnitController = TextEditingController();
   // Function to get paginated data
-  List<ReceivedListModel> get _pagedData {
+  List<MeterReadingModel> get _pagedData {
     final startIndex = (_currentPage - 1) * _pageSize;
     final endIndex = startIndex + _pageSize;
     final filteredData = _filteredData;
@@ -76,9 +78,10 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
 
   @override
   void initState() {
-    getFeesReceiveList().then((value) {
+    getFeesList().then((value) {
       setState(() {});
     });
+    pricePerUnitController.text = Preference.getString(PrefKeys.unitPrice);
     super.initState();
   }
 
@@ -104,7 +107,7 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                 children: [
                   SizedBox(width: 30),
                   Text(
-                    "Fees Receive-List",
+                    "Fees-List",
                     style: TextStyle(
                       color: AppColor.white,
                       fontSize: 16,
@@ -116,9 +119,9 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                     onTap: () async {
                       var updatedData = await Navigator.of(
                         context,
-                      ).pushNamed('/fees Receive', arguments: null);
+                      ).pushNamed('/meter Reading', arguments: null);
                       if (updatedData == "New Data") {
-                        getFeesReceiveList().then((value) {
+                        getFeesList().then((value) {
                           setState(() {});
                         });
                       }
@@ -145,6 +148,24 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                 ],
               ),
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: addMasterOutside5(
+                children: [
+                  TitleTextField(
+                    image: null,
+                    controller: pricePerUnitController,
+                    titileText: "Price per Unit",
+                    hintText: "0.0",
+                    onChanged: (value) {
+                      Preference.setString(PrefKeys.unitPrice, value);
+                    },
+                  ),
+                ],
+                context: context,
+              ),
+            ),
+            SizedBox(height: Sizes.height * .02),
             Container(
               height: 40,
               decoration: BoxDecoration(
@@ -177,6 +198,7 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                         value: _pageSize,
                         onChanged: (int? newValue) {
                           if (newValue != null) {
+                            // null check
                             _onPageSizeChanged(newValue);
                           }
                         },
@@ -205,16 +227,7 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                     const SizedBox(width: 8),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () async {
-                          await exportFeesToExcel(_filteredData);
-                        },
-                        icon: Image.asset(Images.excel),
-                      ),
-                    ),
+
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(3),
@@ -251,6 +264,14 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
             ),
             // Data Table
             Table(
+              columnWidths: const {
+                0: FlexColumnWidth(1), // Hosteler ID
+                1: FlexColumnWidth(1), // Admission Date
+                2: FlexColumnWidth(1), // Hosteler Name
+                3: FlexColumnWidth(1), // Father Name
+                4: FlexColumnWidth(3.5), // Contact Details
+                5: FlexColumnWidth(1), // Address
+              },
               border: TableBorder.all(color: Colors.grey),
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
@@ -258,62 +279,30 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                 TableRow(
                   decoration: BoxDecoration(color: Color(0xffE5FDDD)),
                   children: [
-                    tableHeader('Fees No.'),
-                    tableHeader('Receive Date'),
-                    tableHeader('Student Name'),
-                    tableHeader('Father Name'),
-                    tableHeader('Receive Amt'),
-                    tableHeader('Receive By'),
-                    tableHeader('Narration'),
+                    tableHeader('Room No.'),
+                    tableHeader('Opening Reading'),
+                    tableHeader('Closing Reading'),
+                    tableHeader('Price'),
+                    tableHeader('Student Structure'),
                     tableHeader('Action'),
                   ],
                 ),
                 // Table Data Rows
-                ..._pagedData.map((feesReceive) {
+                ..._pagedData.map((item) {
                   return TableRow(
                     decoration: BoxDecoration(color: AppColor.white),
-
                     children: [
-                      tableBody(feesReceive.feesNo.toString()),
-                      tableBody(feesReceive.date ?? ''),
-                      tableBody(feesReceive.hostelerName ?? ''),
-                      tableBody(feesReceive.fatherName ?? ''),
-                      tableBody(feesReceive.amount ?? ''),
-                      tableBody(feesReceive.receiveBy),
-                      tableBody(feesReceive.narration),
+                      tableBody(item.room ?? ''),
+                      tableBody(item.opningReding ?? ''),
+                      tableBody(item.closingReding ?? ''),
+                      tableBody(item.price.toString()),
+                      tableBody(item.studentStructure.toString()),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              IconButton(
-                                icon: Image.asset(height: 20, Images.edit),
-                                onPressed: () async {
-                                  var updatedData = await Navigator.of(
-                                    context,
-                                  ).pushNamed(
-                                    '/fees Receive',
-                                    arguments: feesReceive,
-                                  );
-                                  if (updatedData == "New Data") {
-                                    getFeesReceiveList().then((value) {
-                                      setState(() {});
-                                    });
-                                  }
-                                },
-                              ),
-
-                              IconButton(
-                                icon: Image.asset(height: 20, Images.pdf),
-                                onPressed: () async {
-                                  await generateFeesReceivePdf(
-                                    feesReceive,
-                                    currecntBranch,
-                                  );
-                                },
-                              ),
-
                               IconButton(
                                 icon: Image.asset(height: 20, Images.delete),
                                 onPressed: () {
@@ -323,7 +312,7 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                                         (dialogContext) => AlertDialog(
                                           title: const Text("Warning"),
                                           content: const Text(
-                                            "Are you sure you want to delete this entry?",
+                                            "Are you sure you want to delete this meter reading?",
                                           ),
                                           actions: [
                                             TextButton(
@@ -339,12 +328,10 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
                                                 backgroundColor: AppColor.red,
                                               ),
                                               onPressed: () {
-                                                deleteFeesReceive(
-                                                  feesReceive.id!,
-                                                ).then((value) {
-                                                  getFeesReceiveList().then((
-                                                    value,
-                                                  ) {
+                                                deleteHostler(item.id!).then((
+                                                  value,
+                                                ) {
+                                                  getFeesList().then((value) {
                                                     setState(() {
                                                       Navigator.of(
                                                         dialogContext,
@@ -405,37 +392,21 @@ class _FeesReceiveListScreenState extends State<FeesReceiveListScreen> {
     );
   }
 
-  Future getFeesReceiveList() async {
+  Future getFeesList() async {
     var response = await ApiService.fetchData(
-      "fees_received?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+      "mitareding?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
-    feesReceiveList = feesReceiveModelFromJson(response['data']);
+    if (response["status"] == true) {
+      feesList = meterReadingModelFromJson(response['data']);
+    }
   }
 
-  Future deleteFeesReceive(int id) async {
-    var response = await ApiService.deleteData("fees_received/$id");
+  Future deleteHostler(String id) async {
+    var response = await ApiService.deleteData("mitareding/$id");
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
     } else {
       showCustomSnackbarError(context, response['message']);
     }
-  }
-
-  BranchList? currecntBranch;
-
-  Future getBranches() async {
-    var response = await ApiService.fetchData(
-      "branch?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
-    );
-
-    List<BranchList> branchList = branchListFromJson(response['branches']);
-
-    // Match current branch by name
-    String? branchName = Preference.getString(PrefKeys.branchName);
-
-    currecntBranch = branchList.firstWhere(
-      (branch) => branch.name == branchName,
-      orElse: () => BranchList(id: 0, name: 'Unknown'), // fallback
-    );
   }
 }

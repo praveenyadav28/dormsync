@@ -1,4 +1,5 @@
 import 'package:dorm_sync/model/ledger.dart';
+import 'package:dorm_sync/ui/excel/ledger_excel.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -214,7 +215,9 @@ class _LedgerListScreenState extends State<LedgerListScreen> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportLedgerListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),

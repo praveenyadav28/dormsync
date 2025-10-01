@@ -1,4 +1,6 @@
 import 'package:dorm_sync/model/admission.dart';
+import 'package:dorm_sync/ui/excel/admission_excel.dart';
+import 'package:dorm_sync/ui/home/hostelers/generate_pdf.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -204,20 +206,14 @@ class _HostelersListState extends State<HostelersList> {
                     const SizedBox(width: 8),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
 
                     Container(
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportAdmissionListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),
@@ -322,6 +318,19 @@ class _HostelersListState extends State<HostelersList> {
                                   }
                                 },
                               ),
+                              if (Preference.getString(PrefKeys.licenseNo) ==
+                                  "LIC4")
+                                IconButton(
+                                  icon: Image.asset(height: 20, Images.pdf),
+                                  onPressed: () async {
+                                    await generateAdmissionPdf(
+                                      data: item,
+                                      photoUrl: item.image,
+                                      rulesPage2Image: "assets/page2.jpg",
+                                      rulesPage3Image: "assets/page1.jpg",
+                                    );
+                                  },
+                                ),
 
                               IconButton(
                                 icon: Image.asset(height: 20, Images.delete),

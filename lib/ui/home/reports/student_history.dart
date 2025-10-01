@@ -1,3 +1,4 @@
+import 'package:dorm_sync/ui/excel/student_history_excel.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/reuse.dart';
 import 'package:flutter/material.dart';
@@ -236,10 +237,16 @@ class _StudentHistoryListState extends State<StudentHistoryList> {
                         hintText: "Search",
                       ),
                     ),
-                    IconButton(icon: Image.asset(Images.pdf), onPressed: () {}),
                     IconButton(
                       icon: Image.asset(Images.excel),
-                      onPressed: () {},
+                      onPressed: () async {
+                        await exportStudentHistoryToExcel(
+                          studentList: studentReportList,
+                          showExHostlerList: _showExHostlerList,
+                          buildingMap: buildingMap,
+                          floorMap: floorMap,
+                        );
+                      },
                     ),
                   ],
                 ),

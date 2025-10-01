@@ -17,7 +17,6 @@ import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
@@ -696,10 +695,7 @@ class _CreateVoucherState extends State<CreateVoucher> {
       endpoint:
           'voucher/${voucherData!.id}?licence_no=${Preference.getString(PrefKeys.licenseNo)}',
 
-      multiFiles:
-          documents != null && documents.isNotEmpty
-              ? {"document[]": documents}
-              : null,
+      multiFiles: documents.isNotEmpty ? {"document[]": documents} : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),

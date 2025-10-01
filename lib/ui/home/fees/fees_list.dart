@@ -1,4 +1,7 @@
+import 'package:dorm_sync/model/branches.dart';
 import 'package:dorm_sync/model/fees.dart';
+import 'package:dorm_sync/ui/excel/fees_entry_excel.dart';
+import 'package:dorm_sync/ui/home/fees/fees_list_pdf.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -203,20 +206,14 @@ class _FeesListScreenState extends State<FeesListScreen> {
                     const SizedBox(width: 8),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
 
                     Container(
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportFeesListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),
@@ -256,17 +253,29 @@ class _FeesListScreenState extends State<FeesListScreen> {
             ),
             // Data Table
             Table(
-              columnWidths: const {
-                0: FlexColumnWidth(1.2), // Hosteler ID
-                1: FlexColumnWidth(1.5), // Admission Date
-                2: FlexColumnWidth(1.8), // Hosteler Name
-                3: FlexColumnWidth(1.8), // Father Name
-                4: FlexColumnWidth(.8), // Contact Details
-                5: FlexColumnWidth(1.3), // Address
-                6: FlexColumnWidth(1.3), // Address
-                7: FlexColumnWidth(1.3), // Address
-                8: FlexColumnWidth(2), // Action
-              },
+              columnWidths:
+                  Preference.getString(PrefKeys.isPG) == "Hostel"
+                      ? {
+                        0: FlexColumnWidth(1.2), // Hosteler ID
+                        1: FlexColumnWidth(1.5), // Admission Date
+                        2: FlexColumnWidth(1.8), // Hosteler Name
+                        3: FlexColumnWidth(1.8), // Father Name
+                        4: FlexColumnWidth(.8), // Contact Details
+                        5: FlexColumnWidth(1.3), // Address
+                        6: FlexColumnWidth(1.3), // Address
+                        7: FlexColumnWidth(1.3), // Address
+                        8: FlexColumnWidth(2), // Action
+                      }
+                      : {
+                        0: FlexColumnWidth(1.2), // Hosteler ID
+                        1: FlexColumnWidth(1.5), // Admission Date
+                        2: FlexColumnWidth(1.8), // Hosteler Name
+                        3: FlexColumnWidth(1.8), // Father Name
+                        4: FlexColumnWidth(1.3), // Contact Details
+                        5: FlexColumnWidth(1.3), // Address
+                        6: FlexColumnWidth(1.3), // Address
+                        7: FlexColumnWidth(2), // Action
+                      },
               border: TableBorder.all(color: Colors.grey),
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
               children: [
@@ -278,7 +287,8 @@ class _FeesListScreenState extends State<FeesListScreen> {
                     tableHeader('Admission Date'),
                     tableHeader('Hosteler Name'),
                     tableHeader('Father Name'),
-                    tableHeader('EMI'),
+                    if (Preference.getString(PrefKeys.isPG) == "Hostel")
+                      tableHeader('EMI'),
                     tableHeader('Total Fees'),
                     tableHeader('Discount'),
                     tableHeader('Remaining'),
@@ -298,7 +308,8 @@ class _FeesListScreenState extends State<FeesListScreen> {
                       ),
                       tableBody(item.hostelerName ?? ''),
                       tableBody(item.fatherName ?? ''),
-                      tableBody(item.emiTotal.toString()),
+                      if (Preference.getString(PrefKeys.isPG) == "Hostel")
+                        tableBody(item.emiTotal.toString()),
                       tableBody(item.totalAmount.toString()),
                       tableBody(item.discount.toString()),
                       tableBody(item.totalRemaining.toString()),
@@ -319,6 +330,15 @@ class _FeesListScreenState extends State<FeesListScreen> {
                                       setState(() {});
                                     });
                                   }
+                                },
+                              ),
+                              IconButton(
+                                icon: Image.asset(height: 20, Images.pdf),
+                                onPressed: () async {
+                                  await generateFeesListPdf(
+                                    item,
+                                    currecntBranch,
+                                  );
                                 },
                               ),
 
@@ -427,5 +447,23 @@ class _FeesListScreenState extends State<FeesListScreen> {
     } else {
       showCustomSnackbarError(context, response['message']);
     }
+  }
+
+  BranchList? currecntBranch;
+
+  Future getBranches() async {
+    var response = await ApiService.fetchData(
+      "branch?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+    );
+
+    List<BranchList> branchList = branchListFromJson(response['branches']);
+
+    // Match current branch by name
+    String? branchName = Preference.getString(PrefKeys.branchName);
+
+    currecntBranch = branchList.firstWhere(
+      (branch) => branch.name == branchName,
+      orElse: () => BranchList(id: 0, name: 'Unknown'), // fallback
+    );
   }
 }

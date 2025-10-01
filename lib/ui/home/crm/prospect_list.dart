@@ -1,3 +1,4 @@
+import 'package:dorm_sync/ui/excel/prospect_excel.dart';
 import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
 import 'package:flutter_inset_shadow/flutter_inset_shadow.dart';
 import 'package:dorm_sync/model/prospect.dart';
@@ -372,20 +373,15 @@ class _ProspectListScreenState extends State<ProspectListScreen> {
                     const SizedBox(width: 8),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
+                    Spacer(),
 
                     Container(
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportProspectsToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),

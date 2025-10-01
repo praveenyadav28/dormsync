@@ -1,4 +1,5 @@
 import 'package:dorm_sync/model/item_model.dart';
+import 'package:dorm_sync/ui/excel/item_excel.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -205,16 +206,9 @@ class _ItemListScreenState extends State<ItemListScreen> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
-
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportItemListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),

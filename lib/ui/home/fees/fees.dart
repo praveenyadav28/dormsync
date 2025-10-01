@@ -45,6 +45,9 @@ class _FeesEntryState extends State<FeesEntry> {
   TextEditingController feesAsignDatepicker = TextEditingController(
     text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
   );
+  TextEditingController feesDueDatepicker = TextEditingController(
+    text: DateFormat('dd/MM/yyyy').format(DateTime.now()),
+  );
   TextEditingController miscAddNameController = TextEditingController();
 
   final FocusNode studentFocusNode = FocusNode();
@@ -575,7 +578,7 @@ class _FeesEntryState extends State<FeesEntry> {
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: Sizes.width * .02,
-                vertical: Sizes.height * .01,
+                vertical: Sizes.height * .02,
               ),
               child: Column(
                 children: [
@@ -779,31 +782,32 @@ class _FeesEntryState extends State<FeesEntry> {
                     ],
                   ),
                   SizedBox(height: Sizes.height * .04),
-                  Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.start, // Aligns text and checkbox
-                    children: [
-                      Text(
-                        "Installment Setup (EMI) ?",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: AppColor.black,
-                          fontWeight: FontWeight.w500,
+                  if (Preference.getString(PrefKeys.isPG) == "Hostel")
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.start, // Aligns text and checkbox
+                      children: [
+                        Text(
+                          "Installment Setup (EMI) ?",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: AppColor.black,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Checkbox(
-                        value: _isInstallmentEnabled,
-                        onChanged: (bool? newValue) {
-                          setState(() {
-                            _isInstallmentEnabled = newValue ?? false;
-                            if (!_isInstallmentEnabled) {
-                              _installmentCountController.clear();
-                            }
-                          });
-                        },
-                      ),
-                    ],
-                  ),
+                        Checkbox(
+                          value: _isInstallmentEnabled,
+                          onChanged: (bool? newValue) {
+                            setState(() {
+                              _isInstallmentEnabled = newValue ?? false;
+                              if (!_isInstallmentEnabled) {
+                                _installmentCountController.clear();
+                              }
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   if (_isInstallmentEnabled)
                     Padding(
                       padding: const EdgeInsets.symmetric(
@@ -876,17 +880,61 @@ class _FeesEntryState extends State<FeesEntry> {
                       ],
                     ),
                   ),
-                  SizedBox(height: Sizes.height * .05),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: DefaultButton(
-                      text: feesData == null ? "Save" : 'Update',
-                      hight: 40,
-                      width: 150,
-                      onTap: () {
-                        feesData == null ? postFeesEntry() : updateFeesEntry();
-                      },
-                    ),
+                  SizedBox(height: Sizes.height * .03),
+                  Row(
+                    children: [
+                      Expanded(child: Container()),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: DefaultButton(
+                            text: feesData == null ? "Save" : 'Update',
+                            hight: 40,
+                            width: 150,
+                            onTap: () {
+                              feesData == null
+                                  ? postFeesEntry()
+                                  : updateFeesEntry();
+                            },
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: SizedBox(
+                            width: 200,
+                            child: TitleTextField(
+                              titileText: "Next Due Date",
+                              image: Images.year,
+                              hintText: "--Date--",
+                              onPressIcon: () async {
+                                selectDate(context, feesDueDatepicker).then((
+                                  onValue,
+                                ) {
+                                  setState(() {});
+                                });
+                              },
+                              controller: feesDueDatepicker,
+                              onChanged: (val) {
+                                bool isValid = smartDateOnChanged(
+                                  value: val,
+                                  controller: feesDueDatepicker,
+                                  previousText: _previousText,
+                                  updatePreviousText:
+                                      (newText) => _previousText = newText,
+                                );
+                                if (isValid) {
+                                  setState(
+                                    () {},
+                                  ); // Only triggers when valid date is formed
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -962,6 +1010,9 @@ class _FeesEntryState extends State<FeesEntry> {
       'EMI_total': emiTotal,
       'other2': _aditionalDiscountController.text.toString(),
       'other3': feesAsignDatepicker.text.toString(),
+      "due_date": DateFormat(
+        'yyyy-MM-dd',
+      ).format(DateFormat('dd/MM/yyyy').parse(feesDueDatepicker.text)),
     });
 
     if (response["status"] == true) {
@@ -1029,6 +1080,8 @@ class _FeesEntryState extends State<FeesEntry> {
       'EMI_total': emiTotal,
       'other2': _aditionalDiscountController.text.toString(),
       'other3': feesAsignDatepicker.text.toString(),
+      if (Preference.getString(PrefKeys.isPG) == "Hostel")
+        "due_date": feesDueDatepicker.text.toString(),
       '_method': "PUT",
     });
 

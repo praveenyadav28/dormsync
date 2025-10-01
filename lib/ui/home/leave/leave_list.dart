@@ -1,4 +1,5 @@
 import 'package:dorm_sync/model/leave.dart';
+import 'package:dorm_sync/ui/excel/leave_excel.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -215,7 +216,9 @@ class _LeaveListScreenState extends State<LeaveListScreen> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportLeaveListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),

@@ -539,173 +539,203 @@ class _RoomAllotmentState extends State<RoomAllotment> {
                 : Wrap(
                   children: List.generate(filteredRooms.length + 1, (index) {
                     if (index == 0) {
-                      return Container(
-                        width: 100,
-                        height: 130,
-                        margin: EdgeInsets.only(
-                          right: Sizes.width * .02,
-                          bottom: Sizes.height * .04,
-                        ),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: AppColor.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppColor.black81,
-                            width: .5,
-                          ),
-                        ),
-                        child: InkWell(
-                          onTap:
-                              selectedBuildingId == null ||
-                                      selectedFloorId == null
-                                  ? null
-                                  : () {
-                                    showDialog(
-                                      context: context,
-                                      builder:
-                                          (ctx) => AlertDialog(
-                                            title: const Text("Add Room"),
-                                            content: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                CommonTextField(
-                                                  controller: roomNoController,
-                                                  image: Images.rooms,
-                                                  hintText: "Room Number*",
-                                                ),
-                                                SizedBox(
-                                                  height: Sizes.height * .02,
-                                                ),
-                                                Row(
+                      return (totalBeds >=
+                              int.parse(
+                                Preference.getString(PrefKeys.hostlerLimit),
+                              ))
+                          ? Container()
+                          : Container(
+                            width: 100,
+                            height: 130,
+                            margin: EdgeInsets.only(
+                              right: Sizes.width * .02,
+                              bottom: Sizes.height * .04,
+                            ),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColor.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppColor.black81,
+                                width: .5,
+                              ),
+                            ),
+                            child: InkWell(
+                              onTap:
+                                  selectedBuildingId == null ||
+                                          selectedFloorId == null
+                                      ? null
+                                      : () {
+                                        showDialog(
+                                          context: context,
+                                          builder:
+                                              (ctx) => AlertDialog(
+                                                title: const Text("Add Room"),
+                                                content: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
                                                   children: [
-                                                    Image.asset(
-                                                      Images.addRoom,
-                                                      height: 30,
+                                                    CommonTextField(
+                                                      controller:
+                                                          roomNoController,
+                                                      image: Images.rooms,
+                                                      hintText: "Room Number*",
                                                     ),
-                                                    SizedBox(width: 5),
-                                                    Expanded(
-                                                      child: DropdownButtonFormField<
-                                                        String
-                                                      >(
-                                                        value:
-                                                            _selectedRoomType,
-                                                        icon: Icon(
-                                                          Icons
-                                                              .keyboard_arrow_down,
-                                                          color:
-                                                              AppColor.primary,
+                                                    SizedBox(
+                                                      height:
+                                                          Sizes.height * .02,
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Image.asset(
+                                                          Images.addRoom,
+                                                          height: 30,
                                                         ),
-                                                        hint: Text(
-                                                          "Room Type",
-                                                          style: TextStyle(
-                                                            color:
-                                                                AppColor
-                                                                    .black81,
-                                                            fontWeight:
-                                                                FontWeight.w500,
+                                                        SizedBox(width: 5),
+                                                        Expanded(
+                                                          child: DropdownButtonFormField<
+                                                            String
+                                                          >(
+                                                            value:
+                                                                _selectedRoomType,
+                                                            icon: Icon(
+                                                              Icons
+                                                                  .keyboard_arrow_down,
+                                                              color:
+                                                                  AppColor
+                                                                      .primary,
+                                                            ),
+                                                            hint: Text(
+                                                              "Room Type",
+                                                              style: TextStyle(
+                                                                color:
+                                                                    AppColor
+                                                                        .black81,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500,
+                                                              ),
+                                                            ),
+                                                            onChanged: (value) {
+                                                              setState(() {
+                                                                _selectedRoomType =
+                                                                    value!;
+                                                              });
+                                                            },
+                                                            items:
+                                                                _roomTypeList.map((
+                                                                  roomType,
+                                                                ) {
+                                                                  return DropdownMenuItem(
+                                                                    value:
+                                                                        roomType,
+                                                                    child: Text(
+                                                                      roomType,
+                                                                      style: TextStyle(
+                                                                        color:
+                                                                            AppColor.black,
+                                                                        fontWeight:
+                                                                            FontWeight.w500,
+                                                                        // height: 2,
+                                                                      ),
+                                                                    ),
+                                                                  );
+                                                                }).toList(),
+                                                            decoration: InputDecoration(
+                                                              isDense: true,
+                                                              border:
+                                                                  UnderlineInputBorder(),
+                                                              contentPadding:
+                                                                  EdgeInsets.symmetric(
+                                                                    horizontal:
+                                                                        12,
+                                                                    vertical:
+                                                                        10,
+                                                                  ),
+                                                            ),
                                                           ),
                                                         ),
-                                                        onChanged: (value) {
-                                                          setState(() {
-                                                            _selectedRoomType =
-                                                                value!;
-                                                          });
-                                                        },
-                                                        items:
-                                                            _roomTypeList.map((
-                                                              roomType,
-                                                            ) {
-                                                              return DropdownMenuItem(
-                                                                value: roomType,
-                                                                child: Text(
-                                                                  roomType,
-                                                                  style: TextStyle(
-                                                                    color:
-                                                                        AppColor
-                                                                            .black,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w500,
-                                                                    // height: 2,
-                                                                  ),
-                                                                ),
-                                                              );
-                                                            }).toList(),
-                                                        decoration: InputDecoration(
-                                                          isDense: true,
-                                                          border:
-                                                              UnderlineInputBorder(),
-                                                          contentPadding:
-                                                              EdgeInsets.symmetric(
-                                                                horizontal: 12,
-                                                                vertical: 10,
-                                                              ),
-                                                        ),
-                                                      ),
+                                                      ],
+                                                    ),
+
+                                                    SizedBox(
+                                                      height:
+                                                          Sizes.height * .02,
+                                                    ),
+                                                    CommonTextField(
+                                                      controller:
+                                                          bedCountController,
+                                                      image: Images.department,
+                                                      hintText: "Beds Count*",
                                                     ),
                                                   ],
                                                 ),
-
-                                                SizedBox(
-                                                  height: Sizes.height * .02,
-                                                ),
-                                                CommonTextField(
-                                                  controller:
-                                                      bedCountController,
-                                                  image: Images.department,
-                                                  hintText: "Beds Count*",
-                                                ),
-                                              ],
-                                            ),
-                                            actions: [
-                                              TextButton(
-                                                onPressed:
-                                                    () => Navigator.pop(ctx),
-                                                child: const Text("Cancel"),
-                                              ),
-                                              TextButton(
-                                                onPressed: () {
-                                                  addRoom(
-                                                    roomNoController.text
-                                                        .trim(),
-                                                    _selectedRoomType,
-                                                    int.tryParse(
-                                                          bedCountController
-                                                              .text
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed:
+                                                        () =>
+                                                            Navigator.pop(ctx),
+                                                    child: const Text("Cancel"),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () {
+                                                      if ((totalBeds +
+                                                              int.parse(
+                                                                bedCountController
+                                                                    .text,
+                                                              )) >
+                                                          int.parse(
+                                                            Preference.getString(
+                                                              PrefKeys
+                                                                  .hostlerLimit,
+                                                            ),
+                                                          )) {
+                                                        showCustomSnackbarError(
+                                                          context,
+                                                          "Your limit in this branch is only of ${Preference.getString(PrefKeys.hostlerLimit)} beds",
+                                                        );
+                                                      } else {
+                                                        addRoom(
+                                                          roomNoController.text
                                                               .trim(),
-                                                        ) ??
-                                                        0,
-                                                    selectedBuildingId!,
-                                                    selectedFloorId!,
-                                                  );
-                                                  Navigator.pop(ctx);
-                                                },
-                                                child: const Text("Save"),
+                                                          _selectedRoomType,
+                                                          int.tryParse(
+                                                                bedCountController
+                                                                    .text
+                                                                    .trim(),
+                                                              ) ??
+                                                              0,
+                                                          selectedBuildingId!,
+                                                          selectedFloorId!,
+                                                        );
+                                                        Navigator.pop(ctx);
+                                                      }
+                                                    },
+                                                    child: const Text("Save"),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
-                                          ),
-                                    );
-                                  },
+                                        );
+                                      },
 
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(Images.addRoom),
-                              SizedBox(height: 10),
-                              Text(
-                                '+ Add Room',
-                                style: TextStyle(
-                                  color: AppColor.black,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                textAlign: TextAlign.center,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(Images.addRoom),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    '+ Add Room',
+                                    style: TextStyle(
+                                      color: AppColor.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                        ),
-                      );
+                            ),
+                          );
                     } else {
                       final room = filteredRooms[index - 1];
                       return Padding(

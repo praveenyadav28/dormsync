@@ -250,7 +250,7 @@ class _SessionScreenState extends State<SessionScreen> {
                                               PrefKeys.sessionDate,
                                               "${financialYears[value]['session_start_date']} - ${financialYears[value]['session_end_date']}",
                                             );
-                                            pushNdRemove(SplashScreen());
+                                            // pushNdRemove(SplashScreen());
                                           },
                                           child: Text("Yes"),
                                         ),

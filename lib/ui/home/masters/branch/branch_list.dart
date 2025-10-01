@@ -1,4 +1,5 @@
 import 'package:dorm_sync/model/branches.dart';
+import 'package:dorm_sync/ui/excel/branch_excel.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -107,37 +108,6 @@ class _BranchListScreenState extends State<BranchListScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const Spacer(),
-                  InkWell(
-                    onTap: () async {
-                      var updatedData = await Navigator.of(
-                        context,
-                      ).pushNamed('/create branch', arguments: null);
-                      if (updatedData == "New Data") {
-                        getBranches().then((value) {
-                          setState(() {});
-                        });
-                      }
-                    },
-                    child: Row(
-                      children: [
-                        Text(
-                          "Create  ",
-                          style: TextStyle(
-                            color: AppColor.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        CircleAvatar(
-                          minRadius: 14,
-                          backgroundColor: AppColor.black.withValues(alpha: .1),
-                          child: Icon(Icons.add, color: AppColor.white),
-                        ),
-                        SizedBox(width: 30),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -201,20 +171,14 @@ class _BranchListScreenState extends State<BranchListScreen> {
                     const SizedBox(width: 8),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
 
                     Container(
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportBranchListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),
@@ -287,70 +251,18 @@ class _BranchListScreenState extends State<BranchListScreen> {
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              IconButton(
-                                icon: Image.asset(height: 20, Images.edit),
-                                onPressed: () async {
-                                  var updatedData = await Navigator.of(
-                                    context,
-                                  ).pushNamed(
-                                    '/create branch',
-                                    arguments: item,
-                                  );
-                                  if (updatedData == "New Data") {
-                                    getBranches().then((value) {
-                                      setState(() {});
-                                    });
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon: Image.asset(height: 20, Images.delete),
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder:
-                                        (dialogContext) => AlertDialog(
-                                          title: const Text("Warning"),
-                                          content: const Text(
-                                            "Are you sure you want to delete this branch?",
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed:
-                                                  () =>
-                                                      Navigator.of(
-                                                        dialogContext,
-                                                      ).pop(),
-                                              child: const Text("Cancel"),
-                                            ),
-                                            ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: AppColor.red,
-                                              ),
-                                              onPressed: () {
-                                                deleteBranch(item.id!).then((
-                                                  value,
-                                                ) {
-                                                  getBranches().then((value) {
-                                                    setState(() {
-                                                      Navigator.of(
-                                                        dialogContext,
-                                                      ).pop();
-                                                    });
-                                                  });
-                                                });
-                                              },
-                                              child: const Text("Delete"),
-                                            ),
-                                          ],
-                                        ),
-                                  );
-                                },
-                              ),
-                            ],
+                          child: IconButton(
+                            icon: Image.asset(height: 20, Images.edit),
+                            onPressed: () async {
+                              var updatedData = await Navigator.of(
+                                context,
+                              ).pushNamed('/create branch', arguments: item);
+                              if (updatedData == "New Data") {
+                                getBranches().then((value) {
+                                  setState(() {});
+                                });
+                              }
+                            },
                           ),
                         ),
                       ),
@@ -399,16 +311,6 @@ class _BranchListScreenState extends State<BranchListScreen> {
     var response = await ApiService.fetchData(
       "branch?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
     );
-
     branchList = branchListFromJson(response['branches']);
-  }
-
-  Future deleteBranch(int id) async {
-    var response = await ApiService.deleteData("branch/$id");
-    if (response["status"] == true) {
-      showCustomSnackbarSuccess(context, response['message']);
-    } else {
-      showCustomSnackbarError(context, response['message']);
-    }
   }
 }

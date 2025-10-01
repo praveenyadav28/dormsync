@@ -1,5 +1,6 @@
 import 'package:dorm_sync/model/fees.dart';
 import 'package:dorm_sync/model/fees_receive.dart';
+import 'package:dorm_sync/model/voucher_model.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -16,6 +17,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  List<VoucherModel> voucherList = [];
+
   String activeHostlers = "0/0";
   String vacancyHostler = "0/0";
   String vacancyRoom = "0/0";
@@ -28,15 +31,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   int totalAssigned = 0;
   int totalReceived = 0;
-
+  Map<String, double> summary = {};
   @override
   void initState() {
     super.initState();
     getHostlersLength();
     getTotalVacancy();
     getRooms();
+    getVouchers().then((value) {
+      summary = _getVoucherSummary(voucherList);
+      sections = _buildChartSections(summary);
+    });
     getStaffLength();
     fetchDashboardData();
+  }
+
+  Map<String, double> _getVoucherSummary(List<VoucherModel> vouchers) {
+    final Map<String, double> map = {};
+    for (var v in vouchers) {
+      final type = v.voucherType ?? "Unknown";
+      final amt = double.tryParse(v.amount ?? "0") ?? 0.0;
+
+      map[type] = (map[type] ?? 0) + amt;
+    }
+    return map;
+  }
+
+  List<PieChartSectionData> sections = [];
+
+  final List<Color> colors = const [
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
+    Colors.purple,
+    Colors.red,
+    Colors.teal,
+  ];
+  List<PieChartSectionData> _buildChartSections(Map<String, double> data) {
+    int i = 0;
+    return data.entries.map((e) {
+      final color = colors[i % colors.length];
+      i++;
+      return PieChartSectionData(
+        color: color,
+        value: e.value,
+        title: "${e.key}\n₹${e.value.toStringAsFixed(0)}",
+        radius: 60,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      );
+    }).toList();
   }
 
   @override
@@ -245,30 +292,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               children: [
                                 Expanded(child: Container()),
                                 Text(
-                                  "Installment Report",
+                                  Preference.getString(PrefKeys.isPG) !=
+                                          "Hostel"
+                                      ? "Voucher Report"
+                                      : "Installment Report",
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
                                 Expanded(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Navigator.pushNamed(
-                                            context,
-                                            '/installments',
-                                          );
-                                        },
-                                        child: Icon(
-                                          Icons.visibility,
-                                          color: AppColor.primary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  child:
+                                      Preference.getString(PrefKeys.isPG) !=
+                                              "Hostel"
+                                          ? Container()
+                                          : Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              InkWell(
+                                                onTap: () {
+                                                  Navigator.pushNamed(
+                                                    context,
+                                                    '/installments',
+                                                  );
+                                                },
+                                                child: Icon(
+                                                  Icons.visibility,
+                                                  color: AppColor.primary,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                 ),
                               ],
                             ),
@@ -284,7 +339,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: SingleChildScrollView(
                                 // scrollDirection: Axis.horizontal,
                                 child:
-                                    flattenedInstallments.isEmpty
+                                    Preference.getString(PrefKeys.isPG) !=
+                                            "Hostel"
+                                        ? summary.isEmpty
+                                            ? const Center(
+                                              child: Text("No voucher data"),
+                                            )
+                                            : PieChart(
+                                              PieChartData(
+                                                sections: sections,
+                                                centerSpaceRadius: 40,
+                                                borderData: FlBorderData(
+                                                  show: false,
+                                                ),
+                                                sectionsSpace: 2,
+                                              ),
+                                            )
+                                        : flattenedInstallments.isEmpty
                                         ? Container()
                                         : DataTable(
                                           columns: const [
@@ -523,5 +594,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         vacancyRoom = "${rooms.length - fullRoom.length}/${rooms.length}";
       });
     }
+  }
+
+  Future getVouchers() async {
+    var response = await ApiService.fetchData(
+      "voucher?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
+    voucherList = voucherModelFromJson(response['data']);
   }
 }

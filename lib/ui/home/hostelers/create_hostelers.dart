@@ -309,7 +309,7 @@ class _CreateHostelersState extends State<CreateHostelers> {
                                   width:
                                       maritalStatus == index
                                           ? Sizes.width * .1
-                                          : Sizes.width * .067,
+                                          : Sizes.width * .065,
                                   decoration: BoxDecoration(
                                     boxShadow: [
                                       BoxShadow(
@@ -1079,7 +1079,6 @@ class _CreateHostelersState extends State<CreateHostelers> {
 
       if (response["status"] == true) {
         showCustomSnackbarSuccess(context, response['message']);
-        print("✅ Admission updated successfully!");
         return true;
       } else {
         showCustomSnackbarError(context, response['message']);

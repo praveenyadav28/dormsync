@@ -1,3 +1,4 @@
+import 'package:dorm_sync/ui/excel/activate_stu_excel.dart';
 import 'package:dorm_sync/model/activated.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
@@ -215,7 +216,9 @@ class _ReactivatedListScreenState extends State<ReactivatedListScreen> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          exportActivatedListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),

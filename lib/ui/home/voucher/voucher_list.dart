@@ -1,4 +1,7 @@
+import 'package:dorm_sync/model/branches.dart';
 import 'package:dorm_sync/model/voucher_model.dart';
+import 'package:dorm_sync/ui/excel/voucher_excel.dart';
+import 'package:dorm_sync/ui/home/voucher/voucher_pdf.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -72,6 +75,7 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
 
   @override
   void initState() {
+    getBranches();
     getVouchers().then((value) {
       setState(() {});
     });
@@ -205,16 +209,9 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                       margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
                       decoration: BoxDecoration(color: Color(0xffECFFE5)),
                       child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
-
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
+                        onPressed: () async {
+                          await exportVoucherListToExcel(_filteredData);
+                        },
                         icon: Image.asset(Images.excel),
                       ),
                     ),
@@ -267,7 +264,6 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                     tableHeader('Voucher Mode'),
                     tableHeader('Transaction Amt'),
                     tableHeader('Payment Mode'),
-                    tableHeader('Narration'),
                     tableHeader('Action'),
                   ],
                 ),
@@ -283,7 +279,6 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                       tableBody(voucher.voucherType ?? ''),
                       tableBody(voucher.amount ?? ''),
                       tableBody(voucher.paymentMode),
-                      tableBody(voucher.narration),
                       TableCell(
                         child: Padding(
                           padding: const EdgeInsets.all(8.0),
@@ -306,6 +301,16 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
                                   }
                                 },
                               ),
+                              IconButton(
+                                icon: Image.asset(height: 20, Images.pdf),
+                                onPressed: () async {
+                                  await generateVoucherPdf(
+                                    voucher,
+                                    currecntBranch,
+                                  );
+                                },
+                              ),
+
                               IconButton(
                                 icon: Image.asset(height: 20, Images.delete),
                                 onPressed: () {
@@ -409,5 +414,23 @@ class _VoucherListScreenState extends State<VoucherListScreen> {
     } else {
       showCustomSnackbarError(context, response['message']);
     }
+  }
+
+  BranchList? currecntBranch;
+
+  Future getBranches() async {
+    var response = await ApiService.fetchData(
+      "branch?licence_no=${Preference.getString(PrefKeys.licenseNo)}",
+    );
+
+    List<BranchList> branchList = branchListFromJson(response['branches']);
+
+    // Match current branch by name
+    String? branchName = Preference.getString(PrefKeys.branchName);
+
+    currecntBranch = branchList.firstWhere(
+      (branch) => branch.name == branchName,
+      orElse: () => BranchList(id: 0, name: 'Unknown'), // fallback
+    );
   }
 }

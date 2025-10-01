@@ -1,4 +1,3 @@
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Preference {
@@ -33,6 +32,7 @@ class PrefKeys {
   static const token = "token";
   static const userstatus = "userstatus";
   static const branchName = "branchName";
+  static const branchAddress = "branchAddress";
   static const branchLength = "branchLength";
   static const licenseNo = "licenseNo";
   static const locationId = "locationId";
@@ -42,9 +42,14 @@ class PrefKeys {
   static const userType = "userType";
   static const financialYear = "financialYear";
   static const coludIdMess = "coludId";
+  static const rights = "rights";
+  static const isMain = "isMain";
+  static const isPG = "isPg";
   static const coludIdHostel = "coludId";
   static const sessionId = "sessionId";
   static const sessionDate = "sessionDate";
+  static const unitPrice = "unitPrice";
+  static const hostlerLimit = "hostlerLimit";
 }
 
 logoutPrefData() async {
@@ -64,4 +69,10 @@ logoutPrefData() async {
   await prefs.remove(PrefKeys.coludIdMess);
   await prefs.remove(PrefKeys.sessionId);
   await prefs.remove(PrefKeys.sessionDate);
+  await prefs.remove(PrefKeys.rights);
+  await prefs.remove(PrefKeys.isMain);
+  await prefs.remove(PrefKeys.isPG);
+  await prefs.remove(PrefKeys.branchAddress);
+  await prefs.remove(PrefKeys.unitPrice);
+  await prefs.remove(PrefKeys.hostlerLimit);
 }

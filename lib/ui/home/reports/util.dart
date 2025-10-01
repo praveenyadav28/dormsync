@@ -1,6 +1,7 @@
 import 'package:dorm_sync/model/fees_receive.dart';
 import 'package:dorm_sync/model/ledger.dart';
 import 'package:dorm_sync/model/voucher_model.dart';
+import 'package:dorm_sync/ui/excel/bank_report_excel.dart';
 import 'package:dorm_sync/utils/colors.dart';
 import 'package:dorm_sync/utils/field_cover.dart';
 import 'package:dorm_sync/utils/images.dart';
@@ -274,8 +275,12 @@ class _LedgerReportScreenState extends State<LedgerReportScreen> {
             style: const TextStyle(fontWeight: FontWeight.w700),
           ),
           const Spacer(),
-          IconButton(icon: Image.asset(Images.pdf), onPressed: () {}),
-          IconButton(icon: Image.asset(Images.excel), onPressed: () {}),
+          IconButton(
+            icon: Image.asset(Images.excel),
+            onPressed: () async {
+              await exportLedgerReportToExcel(reportList);
+            },
+          ),
         ],
       ),
     );

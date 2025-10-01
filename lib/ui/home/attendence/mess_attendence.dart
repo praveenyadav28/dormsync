@@ -184,23 +184,6 @@ class _MessAttendenceListState extends State<MessAttendenceList> {
                     Spacer(),
                     Spacer(),
                     Spacer(),
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.pdf),
-                      ),
-                    ),
-
-                    Container(
-                      margin: EdgeInsets.symmetric(vertical: 3, horizontal: 8),
-                      decoration: BoxDecoration(color: Color(0xffECFFE5)),
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: Image.asset(Images.excel),
-                      ),
-                    ),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(3),
@@ -369,7 +352,9 @@ class _MessAttendenceListState extends State<MessAttendenceList> {
   }
 
   Future getAttendenceStudentList(String activeStatus) async {
-    var response = await ApiService.fetchData("attendance?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}");
+    var response = await ApiService.fetchData(
+      "attendance?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
     if (response["status"] == true) {
       studentsList =
           attendenceListFromJson(

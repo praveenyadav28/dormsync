@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_print
 
 import 'dart:convert';
-import 'dart:io' show File;
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;

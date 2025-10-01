@@ -29,6 +29,7 @@ class _AssignRoomState extends State<AssignRoom> {
   TextEditingController admissionDateController = TextEditingController();
   TextEditingController courseController = TextEditingController();
   TextEditingController fatherNameController = TextEditingController();
+  TextEditingController meterReadingController = TextEditingController();
 
   List<Map<String, dynamic>> buildings = [];
   List<Map<String, dynamic>> floors = [];
@@ -275,6 +276,11 @@ class _AssignRoomState extends State<AssignRoom> {
                         controller: fatherNameController,
                         image: Images.father,
                         hintText: '--Father Name--',
+                      ),
+                      CommonTextFieldBorder(
+                        controller: meterReadingController,
+                        image: Images.voucher,
+                        hintText: '--Meter Reading--',
                       ),
                     ],
                     context: context,
@@ -559,6 +565,7 @@ class _AssignRoomState extends State<AssignRoom> {
       'room_type': selectedRoomType,
       'room_no': selectedRoomNumber,
       "room_id": selectedRoomId,
+      "other1": meterReadingController.text.toString(),
     });
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
@@ -585,6 +592,7 @@ class _AssignRoomState extends State<AssignRoom> {
         'room_type': selectedRoomType,
         'room_no': selectedRoomNumber,
         "room_id": selectedRoomId,
+        "other1": meterReadingController.text.toString(),
         '_method': "PUT",
       },
     );

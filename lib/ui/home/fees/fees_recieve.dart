@@ -17,7 +17,6 @@ import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:searchfield/searchfield.dart';
@@ -643,10 +642,7 @@ class _FeesReceiveState extends State<FeesReceive> {
   Future postFeesReceive(List<XFile> documents) async {
     final response = await ApiService.uploadFiles(
       endpoint: 'fees_received',
-      multiFiles:
-          documents != null && documents.isNotEmpty
-              ? {"ss_image[]": documents}
-              : null,
+      multiFiles: documents.isNotEmpty ? {"ss_image[]": documents} : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),
@@ -688,10 +684,7 @@ class _FeesReceiveState extends State<FeesReceive> {
   Future updateFeesReceive(List<XFile> documents) async {
     final response = await ApiService.uploadFiles(
       endpoint: 'fees_received/${feesReceiveData!.id!}',
-      multiFiles:
-          documents != null && documents.isNotEmpty
-              ? {"ss_image[]": documents}
-              : null,
+      multiFiles: documents.isNotEmpty ? {"ss_image[]": documents} : null,
       fields: {
         'licence_no': Preference.getString(PrefKeys.licenseNo),
         'branch_id': Preference.getint(PrefKeys.locationId).toString(),

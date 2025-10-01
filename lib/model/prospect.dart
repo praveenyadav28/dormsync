@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:intl/intl.dart';
-
 List<ProspectList> prospectListFromJson(List<dynamic> jsonList) {
   return List<ProspectList>.from(
     jsonList.map((x) => ProspectList.fromJson(x as Map<String, dynamic>)),
