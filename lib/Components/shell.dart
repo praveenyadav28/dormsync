@@ -9,6 +9,8 @@ import 'package:dorm_sync/ui/home/crm/prospect.dart';
 import 'package:dorm_sync/ui/home/crm/prospect_list.dart';
 import 'package:dorm_sync/ui/home/dashboard/dashboard.dart';
 import 'package:dorm_sync/ui/home/dashboard/installment.dart';
+import 'package:dorm_sync/ui/home/fees/contro_expase.dart';
+import 'package:dorm_sync/ui/home/fees/contro_list.dart';
 import 'package:dorm_sync/ui/home/fees/fees.dart';
 import 'package:dorm_sync/ui/home/fees/fees_list.dart';
 import 'package:dorm_sync/ui/home/fees/fees_recieve.dart';
@@ -201,7 +203,9 @@ class _ShellState extends State<Shell> {
       '/fees Receive List': (ctx) => const FeesReceiveListScreen(),
       '/fees Receive': (ctx) => const FeesReceive(),
       '/meter Reading List': (ctx) => const MeterListScreen(),
-      '/meter Reading': (ctx) =>  MeterReadingAdd(),
+      '/meter Reading': (ctx) => MeterReadingAdd(),
+      '/hostler Expanse List': (ctx) => ContraExpanseListScreen(),
+      '/hostler Expanse': (ctx) => CreateContraExpanse(),
     },
     {
       '/': (ctx) => const VisitorListScreen(),
@@ -492,7 +496,7 @@ class _ShellState extends State<Shell> {
                             ),
                           if (hasAccess("Staff Master"))
                             PopupMenuItem(
-                              value: '/staff Master',            
+                              value: '/staff Master',
                               child: Text('Staff Master'),
                             ),
                           if (hasAccess("Ledger Master"))
@@ -538,6 +542,10 @@ class _ShellState extends State<Shell> {
                           PopupMenuItem(
                             value: '/meter Reading List',
                             child: Text('Meter Reading'),
+                          ),
+                          PopupMenuItem(
+                            value: '/hostler Expanse List',
+                            child: Text('Hoslter Expanse'),
                           ),
                         ],
                       );

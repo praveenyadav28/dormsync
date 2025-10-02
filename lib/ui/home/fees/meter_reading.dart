@@ -1,8 +1,4 @@
-import 'dart:convert';
-
-import 'package:dorm_sync/model/admission.dart';
-import 'package:dorm_sync/model/fees.dart';
-import 'package:dorm_sync/ui/home/room/room_utils.dart';
+import 'package:dorm_sync/model/assign_room.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/buttons.dart';
 import 'package:dorm_sync/utils/colors.dart';
@@ -13,7 +9,6 @@ import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
 import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 class MeterReadingAdd extends StatefulWidget {
   const MeterReadingAdd({super.key});
@@ -26,68 +21,27 @@ class _MeterReadingAddState extends State<MeterReadingAdd> {
   List<Map<String, dynamic>> buildings = [];
   List<Map<String, dynamic>> floors = [];
   List<Map<String, dynamic>> rooms = [];
-
-  int? selectedBuildingId;
-  int? selectedFloorId;
-  String? selectedRoomType;
-  int? selectedRoomId;
-  String? selectedRoomNumber;
-  int? selectedRoomBeds;
-  int? selectedRoomOccupacy;
-
   List<Map<String, dynamic>> filteredFloors = [];
   List<Map<String, dynamic>> filteredRooms = [];
 
-  FeesList? feesData;
+  Map<String, dynamic>? selectedBuilding;
+  Map<String, dynamic>? selectedFloor;
 
-  final TextEditingController _openingReadingController =
-      TextEditingController();
-  final TextEditingController _closingReadingController =
-      TextEditingController();
-  final TextEditingController _pricePerUnitController = TextEditingController();
-  final TextEditingController _totalAmtController = TextEditingController();
+  List<AssignRoomModel> studentList = [];
 
-  List<AdmissionList> studentList = [];
-  List<AdmissionList> studentListInRoom = [];
-  Map<String, TextEditingController> studentFeeControllers = {};
-
-  /// 🧮 Calculate Total and divide among students
-  void calculateTotalAmount() {
-    final opening = double.tryParse(_openingReadingController.text) ?? 0;
-    final closing = double.tryParse(_closingReadingController.text) ?? 0;
-    final price = double.tryParse(_pricePerUnitController.text) ?? 0;
-
-    final total = (closing - opening) * price;
-    _totalAmtController.text = total.toStringAsFixed(2);
-
-    if (studentListInRoom.isNotEmpty) {
-      final share = total / studentListInRoom.length;
-      for (var s in studentListInRoom) {
-        studentFeeControllers[s.studentId]?.text = share.toStringAsFixed(2);
-      }
-    }
-  }
+  // Room controllers
+  Map<int, TextEditingController> openingControllers = {};
+  Map<int, TextEditingController> closingControllers = {};
+  Map<int, TextEditingController> discountControllers = {};
+  Map<int, double> finalPriceValues = {}; // calculated final price
 
   @override
   void initState() {
-    _pricePerUnitController.text = Preference.getString(PrefKeys.unitPrice);
+    super.initState();
     getBuildings();
     getFloors();
     getRooms();
-
-    Future.delayed(Duration.zero, () {
-      final args = ModalRoute.of(context)?.settings.arguments;
-      if (args != null && feesData == null) {
-        feesData = args as FeesList;
-
-        _totalAmtController.text = feesData!.totalAmount ?? "";
-      }
-    });
-    getHostlers().then((value) {
-      setState(() {});
-    });
-
-    super.initState();
+    getRoomAsign();
   }
 
   Future<void> getBuildings() async {
@@ -123,22 +77,157 @@ class _MeterReadingAddState extends State<MeterReadingAdd> {
     }
   }
 
+  Future<void> getRoomAsign() async {
+    var response = await ApiService.fetchData(
+      "roomassign?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+    );
+    if (response["status"] == true) {
+      setState(() {
+        studentList = assignRoomModelFromJson(response['data']);
+      });
+    }
+  }
+
+  double getUnitPrice() {
+    return double.tryParse(Preference.getString(PrefKeys.unitPrice)) ?? 0.0;
+  }
+
+  void calculateFinal(int roomId) {
+    double opening =
+        double.tryParse(openingControllers[roomId]?.text ?? "0") ?? 0;
+    double closing =
+        double.tryParse(closingControllers[roomId]?.text ?? "0") ?? 0;
+    double discount =
+        double.tryParse(discountControllers[roomId]?.text ?? "0") ?? 0;
+    double unitPrice = getUnitPrice();
+
+    double units = closing - opening - discount;
+    double finalPrice = units * unitPrice;
+
+    setState(() {
+      finalPriceValues[roomId] = finalPrice;
+    });
+  }
+
+  Future<void> postMeterReading() async {
+    List<Map<String, dynamic>> structure = [];
+
+    for (var room in filteredRooms) {
+      int roomId = room["id"];
+
+      // Get students in this room
+      final studentsInRoom =
+          studentList
+              .where((s) => s.roomNo == room["room_no"].toString())
+              .toList();
+
+      double openingReading =
+          double.tryParse(openingControllers[roomId]?.text ?? "0") ?? 0;
+      double closingReading =
+          double.tryParse(closingControllers[roomId]?.text ?? "0") ?? 0;
+      double discountUnit =
+          double.tryParse(discountControllers[roomId]?.text ?? "0") ?? 0;
+      double unitPrice = getUnitPrice();
+
+      List<Map<String, dynamic>> studentStructure = [];
+
+      if (studentsInRoom.isNotEmpty) {
+        // Sort students by their "other1" start unit
+        studentsInRoom.sort(
+          (a, b) => (double.tryParse(a.other1 ?? "0") ?? 0).compareTo(
+            double.tryParse(b.other1 ?? "0") ?? 0,
+          ),
+        );
+
+        // Loop through students and calculate units
+        for (int i = 0; i < studentsInRoom.length; i++) {
+          var s = studentsInRoom[i];
+          double studentStart =
+              double.tryParse(s.other1 ?? openingReading.toString()) ??
+              openingReading;
+
+          double studentEnd;
+          if (i < studentsInRoom.length - 1) {
+            double nextStudentStart =
+                double.tryParse(
+                  studentsInRoom[i + 1].other1 ?? closingReading.toString(),
+                ) ??
+                closingReading;
+            studentEnd = nextStudentStart;
+          } else {
+            studentEnd = closingReading;
+          }
+
+          double studentUnits =
+              studentEnd - studentStart - discountUnit / studentsInRoom.length;
+          studentUnits = studentUnits > 0 ? studentUnits : 0;
+
+          studentStructure.add({
+            "hostler_id": s.hostelerId ?? "",
+            "student_name": s.hostelerName ?? "",
+            "course": s.courseName ?? "",
+            "father_name": s.fatherName ?? "",
+            "closing_reading": studentUnits.toStringAsFixed(2),
+            "price": (studentUnits * unitPrice).toStringAsFixed(2),
+          });
+        }
+      }
+
+      // Calculate total price for the room
+      double roomTotalPrice = studentStructure.fold(
+        0,
+        (sum, s) => sum + double.parse(s["price"] ?? "0"),
+      );
+
+      structure.add({
+        "room_id": roomId.toString(),
+        "room_no": room["room_no"].toString(),
+        "opning_reding": openingControllers[roomId]?.text ?? "0",
+        "closing_reding": closingControllers[roomId]?.text ?? "0",
+        "descount_unit":
+            discountControllers[roomId]?.text.trim().isEmpty ?? true
+                ? "0"
+                : discountControllers[roomId]?.text ?? "0",
+        "unit": unitPrice.toString(),
+        "price": roomTotalPrice.toStringAsFixed(2),
+        "student_structure": studentStructure,
+      });
+    }
+
+    // Post data to API
+    var response = await ApiService.postData("mitareding", {
+      "licence_no": Preference.getString(PrefKeys.licenseNo),
+      "branch_id": Preference.getint(PrefKeys.locationId).toString(),
+      "building": selectedBuilding?["building"] ?? "",
+      "floor": selectedFloor?["floor"] ?? "",
+      "structure": structure,
+    });
+
+    print(structure);
+
+    if (response["status"] == true) {
+      showCustomSnackbarSuccess(context, response['message']);
+      Navigator.pop(context, "New Data");
+    } else {
+      showCustomSnackbarError(context, response['message']);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.background,
       body: SingleChildScrollView(
-        padding: EdgeInsets.only(
-          left: Sizes.width * .02,
-          right: Sizes.width * .02,
-          bottom: Sizes.height * .05,
-          top: Sizes.height * .01,
+        padding: EdgeInsets.symmetric(
+          horizontal: Sizes.width * .02,
+          vertical: Sizes.height * .02,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /// Heading
             Container(
-              margin: EdgeInsets.only(bottom: Sizes.height * .04),
+              margin: EdgeInsets.only(bottom: Sizes.height * .02),
               height: 40,
               decoration: BoxDecoration(
                 color: AppColor.primary,
@@ -146,335 +235,215 @@ class _MeterReadingAddState extends State<MeterReadingAdd> {
               ),
               child: Row(
                 children: [
-                  SizedBox(width: 30),
+                  SizedBox(width: 20),
                   Text(
                     "Meter Reading Entry",
-                    style: TextStyle(
-                      color: AppColor.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
-                  const Spacer(),
+                  Spacer(),
                   InkWell(
                     onTap: () => Navigator.pop(context),
                     child: Row(
                       children: [
                         Text(
-                          "Back to List  ",
-                          style: TextStyle(
-                            color: AppColor.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          "Back",
+                          style: TextStyle(color: Colors.white, fontSize: 16),
                         ),
-                        Image.asset(Images.back),
-                        SizedBox(width: 30),
+                        SizedBox(width: 20),
                       ],
                     ),
                   ),
                 ],
               ),
             ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
+
+            /// Building & Floor Selection
+            addMasterOutside(
               children: [
-                Text(
-                  'Room Details  ',
-                  style: TextStyle(
-                    color: AppColor.black,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 17,
-                  ),
+                Row(
+                  children: [
+                    Image.asset(Images.business, height: 30),
+                    SizedBox(width: 5),
+                    Expanded(
+                      child: DropdownButtonFormField<Map<String, dynamic>>(
+                        isExpanded: true,
+                        hint: Text("Select Building"),
+                        value: selectedBuilding,
+                        items:
+                            buildings.map((b) {
+                              return DropdownMenuItem(
+                                value: b,
+                                child: Text(b["building"]),
+                              );
+                            }).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedBuilding = val;
+                            selectedFloor = null;
+                            filteredFloors =
+                                floors
+                                    .where(
+                                      (f) => f["building_id"] == val!["id"],
+                                    )
+                                    .toList();
+                            filteredRooms = [];
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(child: Divider(color: AppColor.black)),
-                Expanded(child: Container()),
-                Expanded(child: Container()),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Image.asset(Images.rooms, height: 30),
+                    SizedBox(width: 5),
+                    Expanded(
+                      child: DropdownButtonFormField<Map<String, dynamic>>(
+                        isExpanded: true,
+                        hint: Text("Select Floor"),
+                        value: selectedFloor,
+                        items:
+                            filteredFloors.map((f) {
+                              return DropdownMenuItem(
+                                value: f,
+                                child: Text(f["floor"]),
+                              );
+                            }).toList(),
+                        onChanged: (val) {
+                          setState(() {
+                            selectedFloor = val;
+                            filteredRooms =
+                                rooms
+                                    .where((r) => r["floor_id"] == val!["id"])
+                                    .toList();
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ],
+              context: context,
             ),
-            SizedBox(height: Sizes.height * .02),
 
-            // Row(
-            //   crossAxisAlignment: CrossAxisAlignment.start,
-            //   children: [
-            //     Expanded(
-            //       flex: 4,
-            //       child: Padding(
-            //         padding: EdgeInsets.symmetric(
-            //           horizontal: Sizes.width * .05,
-            //           vertical: Sizes.height * .01,
-            //         ),
-            //         child: Column(
-            //           children: [
-            //             RoomSelectionWidget(
-            //               buildings: buildings,
-            //               floors: floors,
-            //               rooms: rooms,
-            //               selectedBuildingId: selectedBuildingId,
-            //               selectedFloorId: selectedFloorId,
-            //               selectedRoomType: selectedRoomType,
-            //               selectedRoomId: selectedRoomId,
-            //               onBuildingChange: (val) {
-            //                 setState(() {
-            //                   selectedBuildingId = val;
-            //                   selectedFloorId = null;
-            //                   selectedRoomId = null;
-            //                   selectedRoomType = null;
-            //                 });
-            //               },
-            //               onFloorChange: (val) {
-            //                 setState(() {
-            //                   selectedFloorId = val;
-            //                   selectedRoomId = null;
-            //                   selectedRoomType = null;
-            //                 });
-            //               },
-            //               onRoomTypeChange: (val) {
-            //                 setState(() {
-            //                   selectedRoomType = val;
-            //                   selectedRoomId = null;
-            //                 });
-            //               },
-            //               onRoomChange: (val) {
-            //                 setState(() {
-            //                   selectedRoomId = val;
-            //                 });
-            //               },
-            //               onRoomDetailsSelected: (room) {
-            //                 setState(() {
-            //                   selectedRoomBeds = room['room_beds'];
-            //                   selectedRoomNumber = room['room_no']?.toString();
-            //                   selectedRoomOccupacy = room['current_occupants'];
-            //                   List<String> getHostelerIds(
-            //                     dynamic hostelerIdRaw,
-            //                   ) {
-            //                     if (hostelerIdRaw is String) {
-            //                       // Decode string → List
-            //                       return List<String>.from(
-            //                         jsonDecode(hostelerIdRaw),
-            //                       );
-            //                     } else if (hostelerIdRaw is List) {
-            //                       // Already a List
-            //                       return hostelerIdRaw.cast<String>();
-            //                     } else {
-            //                       return [];
-            //                     }
-            //                   }
+            SizedBox(height: 20),
 
-            //                   // Usage
-            //                   final hostelerIds = getHostelerIds(
-            //                     room['hosteler_id'],
-            //                   );
+            /// Rooms List
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              itemCount: filteredRooms.length,
+              itemBuilder: (context, index) {
+                final room = filteredRooms[index];
+                int roomId = room["id"];
 
-            //                   studentListInRoom =
-            //                       studentList
-            //                           .where(
-            //                             (s) =>
-            //                                 hostelerIds.contains(s.studentId),
-            //                           )
-            //                           .toList();
-            //                 });
-            //               },
-            //             ),
-            //             SizedBox(height: Sizes.height * .05),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
+                openingControllers.putIfAbsent(
+                  roomId,
+                  () => TextEditingController(),
+                );
+                closingControllers.putIfAbsent(
+                  roomId,
+                  () => TextEditingController(),
+                );
+                discountControllers.putIfAbsent(
+                  roomId,
+                  () => TextEditingController(),
+                );
 
-            //     Expanded(
-            //       flex: 3,
-            //       child: Card(
-            //         elevation: 8,
-            //         shape: RoundedRectangleBorder(
-            //           borderRadius: BorderRadius.circular(6),
-            //         ),
-            //         margin: const EdgeInsets.all(8.0),
-            //         child: Stack(
-            //           children: [
-            //             selectedRoomId == null
-            //                 ? Container()
-            //                 : Container(
-            //                   margin: EdgeInsets.only(top: 40),
-            //                   width: double.infinity,
-            //                   height: 170,
-            //                   padding: EdgeInsets.symmetric(
-            //                     horizontal: Sizes.width * .02,
-            //                     vertical: Sizes.height * .025,
-            //                   ),
-            //                   decoration: const BoxDecoration(
-            //                     color: Colors.white,
-            //                     borderRadius: BorderRadius.only(
-            //                       bottomLeft: Radius.circular(12),
-            //                       bottomRight: Radius.circular(12),
-            //                     ),
-            //                   ),
-            //                   child: Wrap(
-            //                     runAlignment: WrapAlignment.spaceAround,
-            //                     children: List.generate(
-            //                       selectedRoomBeds ?? 0,
-            //                       (index) => Padding(
-            //                         padding: EdgeInsets.symmetric(
-            //                           horizontal: Sizes.width * .03,
-            //                         ),
-            //                         child: Image.asset(
-            //                           Images.roomshow,
-            //                           height: 50,
-            //                           color:
-            //                               index + 1 <= selectedRoomOccupacy!
-            //                                   ? AppColor.red
-            //                                   : AppColor.primary,
-            //                         ),
-            //                       ),
-            //                     ),
-            //                   ),
-            //                 ),
+                final studentsInRoom =
+                    studentList
+                        .where((s) => s.roomNo == room["room_no"].toString())
+                        .toList();
 
-            //             selectedRoomId == null
-            //                 ? Container()
-            //                 : Container(
-            //                   width: double.infinity,
-            //                   padding: const EdgeInsets.symmetric(
-            //                     vertical: 10.0,
-            //                     horizontal: 20.0,
-            //                   ),
-            //                   decoration: BoxDecoration(
-            //                     color: Colors.blue.shade600,
-            //                     borderRadius: BorderRadius.circular(5),
-            //                     boxShadow: [
-            //                       BoxShadow(
-            //                         color: AppColor.black81,
-            //                         spreadRadius: 1,
-            //                         blurRadius: 3,
-            //                         offset: const Offset(0, 2),
-            //                       ),
-            //                     ],
-            //                   ),
-            //                   child: Text(
-            //                     'Room No.- $selectedRoomNumber',
-            //                     textAlign: TextAlign.center,
-            //                     style: TextStyle(
-            //                       color: AppColor.black,
-            //                       fontSize: 20,
-            //                       fontWeight: FontWeight.bold,
-            //                     ),
-            //                   ),
-            //                 ),
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),
-            // SizedBox(height: Sizes.height * .02),
-            // addMasterOutside5(
-            //   children: [
-            //     TitleTextField(
-            //       image: null,
-            //       controller: _openingReadingController,
-            //       titileText: "Opening Reading",
-            //       hintText: "0.0",
-            //       onChanged: (_) => calculateTotalAmount(),
-            //     ),
-            //     TitleTextField(
-            //       image: null,
-            //       controller: _closingReadingController,
-            //       titileText: "Closing Reading",
-            //       hintText: "0.0",
-            //       onChanged: (_) => calculateTotalAmount(),
-            //     ),
-            //     TitleTextField(
-            //       image: null,
-            //       readOnly: true,
-            //       controller: _pricePerUnitController,
-            //       titileText: "Price per Unit",
-            //       hintText: "0.0",
-            //     ),
-            //     TitleTextField(
-            //       image: null,
-            //       readOnly: true,
-            //       controller: _totalAmtController,
-            //       titileText: "Total Price",
-            //       hintText: "0.0",
-            //     ),
-            //   ],
-            //   context: context,
-            // ),
-            // SizedBox(height: Sizes.height * .03),
-            // addMasterOutside5(
-            //   children: [
-            //     ...studentListInRoom.map((s) {
-            //       studentFeeControllers.putIfAbsent(
-            //         s.studentId ?? "",
-            //         () => TextEditingController(),
-            //       );
-            //       return TitleTextField(
-            //         image: null,
-            //         controller: studentFeeControllers[s.studentId],
-            //         titileText: s.studentName ?? "Student",
-            //         hintText: "0.0",
-            //       );
-            //     }).toList(),
-            //   ],
-            //   context: context,
-            // ),
+                return Card(
+                  margin: EdgeInsets.only(bottom: 15),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Room No: ${room["room_no"]} (${room["room_type"]})",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 8),
+                        addMasterOutside5(
+                          children: [
+                            TitleTextField(
+                              image: null,
+                              controller: openingControllers[roomId],
+                              titileText: "Opening Reading",
+                              hintText: '--0.0--',
+                              onChanged: (_) => calculateFinal(roomId),
+                            ),
+                            TitleTextField(
+                              image: null,
+                              controller: closingControllers[roomId],
+                              titileText: "Closing Reading",
+                              hintText: '--0.0--',
+                              onChanged: (_) => calculateFinal(roomId),
+                            ),
+                            // TitleTextField(
+                            //   image: null,
+                            //   controller: discountControllers[roomId],
+                            //   titileText: "Discount Unit",
+                            //   hintText: '--0.0--',
+                            //   onChanged: (_) => calculateFinal(roomId),
+                            // ),
+                            TitleTextField(
+                              image: null,
+                              readOnly: true,
+                              controller: discountControllers[roomId],
+                              titileText: "Final Price:",
+                              hintText:
+                                  '₹${finalPriceValues[roomId]?.toStringAsFixed(2) ?? "0.0"}',
+                              onChanged: (_) => calculateFinal(roomId),
+                            ),
+                          ],
+                          context: context,
+                        ),
+                        SizedBox(height: 10),
+
+                        Text(
+                          "Students:",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        Wrap(
+                          children:
+                              studentsInRoom.map((s) {
+                                return SizedBox(
+                                  width: 300,
+                                  child: ListTile(
+                                    dense: true,
+                                    title: Text(s.hostelerName ?? ""),
+                                    subtitle: Text(
+                                      "Opening Reading: ${s.other1 ?? ""}",
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            SizedBox(height: 20),
+
+            /// Save Button
             Center(
               child: DefaultButton(
-                text: "Save",
-                hight: 40,
-                width: 150,
-                onTap: () {
-                  postMitareding();
-                },
+                text: "Save All",
+                hight: 45,
+                width: 160,
+                onTap: postMeterReading,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  Future getHostlers() async {
-    var response = await ApiService.fetchData(
-      "admissionform?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
-    );
-    if (response["status"] == true) {
-      studentList = admissionListFromJson(response['data']);
-    }
-  }
-
-  Future postMitareding() async {
-    final studentsData =
-        studentListInRoom.map((s) {
-          return {
-            "student_id": s.studentId,
-            "name": s.studentName,
-            "fees":
-                double.tryParse(
-                  studentFeeControllers[s.studentId]?.text ?? "0",
-                ) ??
-                0,
-          };
-        }).toList();
-    var response = await ApiService.postData("mitareding", {
-      'licence_no': Preference.getString(PrefKeys.licenseNo),
-      'branch_id': Preference.getint(PrefKeys.locationId).toString(),
-      "building": selectedBuildingId.toString(),
-      "floor": selectedFloorId.toString(),
-      "room": selectedRoomNumber ?? "",
-      "opning_reding": _openingReadingController.text,
-      "closing_reding": _closingReadingController.text,
-      "unit": _pricePerUnitController.text,
-      "price": _totalAmtController.text,
-      "student_structure": studentsData,
-    });
-
-    if (response["status"] == true) {
-      // Assuming showCustomSnackbarSuccess and showCustomSnackbarError are defined
-      showCustomSnackbarSuccess(context, response['message']);
-      Navigator.pop(context, "New Data");
-    } else {
-      showCustomSnackbarError(context, response['message']);
-    }
   }
 }

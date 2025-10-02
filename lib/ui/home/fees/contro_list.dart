@@ -1,25 +1,23 @@
-import 'dart:convert';
-
-import 'package:dorm_sync/model/meterreading_model.dart';
+import 'package:dorm_sync/model/extra_expanse.dart';
 import 'package:dorm_sync/utils/api.dart';
 import 'package:dorm_sync/utils/colors.dart';
-import 'package:dorm_sync/utils/field_cover.dart';
+import 'package:dorm_sync/utils/images.dart';
 import 'package:dorm_sync/utils/prefence.dart';
 import 'package:dorm_sync/utils/reuse.dart';
 import 'package:dorm_sync/utils/sizes.dart';
 import 'package:dorm_sync/utils/snackbar.dart';
-import 'package:dorm_sync/utils/textformfield.dart';
 import 'package:flutter/material.dart';
 
-class MeterListScreen extends StatefulWidget {
-  const MeterListScreen({super.key});
+class ContraExpanseListScreen extends StatefulWidget {
+  const ContraExpanseListScreen({super.key});
 
   @override
-  State<MeterListScreen> createState() => _MeterListScreenState();
+  State<ContraExpanseListScreen> createState() =>
+      _ContraExpanseListScreenState();
 }
 
-class _MeterListScreenState extends State<MeterListScreen> {
-  List<MeterReadingModel> feesList = [];
+class _ContraExpanseListScreenState extends State<ContraExpanseListScreen> {
+  List<ExtraExpanseModel> voucherList = [];
 
   // Store the filter values
   String _searchQuery = '';
@@ -28,16 +26,16 @@ class _MeterListScreenState extends State<MeterListScreen> {
   final List<int> _pageSizeOptions = [5, 10, 20, 50]; // Page size options
 
   // Function to filter the data
-  List<MeterReadingModel> get _filteredData {
-    List<MeterReadingModel> result =
-        feesList; // Initialize with unfiltered data
+  List<ExtraExpanseModel> get _filteredData {
+    List<ExtraExpanseModel> result =
+        voucherList; // Initialize with unfiltered data
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
 
       result =
-          feesList.where((item) {
-            final Map<String, dynamic> itemMap = item.toJson();
-            return itemMap.values.any((value) {
+          voucherList.where((voucher) {
+            final Map<String, dynamic> voucherMap = voucher.toJson();
+            return voucherMap.values.any((value) {
               return value?.toString().toLowerCase().contains(query) ?? false;
             });
           }).toList();
@@ -45,9 +43,8 @@ class _MeterListScreenState extends State<MeterListScreen> {
     return result;
   }
 
-  final TextEditingController pricePerUnitController = TextEditingController();
   // Function to get paginated data
-  List<MeterReadingModel> get _pagedData {
+  List<ExtraExpanseModel> get _pagedData {
     final startIndex = (_currentPage - 1) * _pageSize;
     final endIndex = startIndex + _pageSize;
     final filteredData = _filteredData;
@@ -77,10 +74,9 @@ class _MeterListScreenState extends State<MeterListScreen> {
 
   @override
   void initState() {
-    getFeesList().then((value) {
+    getExtraExpanse().then((value) {
       setState(() {});
     });
-    pricePerUnitController.text = Preference.getString(PrefKeys.unitPrice);
     super.initState();
   }
 
@@ -106,7 +102,7 @@ class _MeterListScreenState extends State<MeterListScreen> {
                 children: [
                   SizedBox(width: 30),
                   Text(
-                    "Fees-List",
+                    "Vouchers-List",
                     style: TextStyle(
                       color: AppColor.white,
                       fontSize: 16,
@@ -118,9 +114,9 @@ class _MeterListScreenState extends State<MeterListScreen> {
                     onTap: () async {
                       var updatedData = await Navigator.of(
                         context,
-                      ).pushNamed('/meter Reading', arguments: null);
+                      ).pushNamed('/hostler Expanse', arguments: null);
                       if (updatedData == "New Data") {
-                        getFeesList().then((value) {
+                        getExtraExpanse().then((value) {
                           setState(() {});
                         });
                       }
@@ -147,24 +143,6 @@ class _MeterListScreenState extends State<MeterListScreen> {
                 ],
               ),
             ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: addMasterOutside5(
-                children: [
-                  TitleTextField(
-                    image: null,
-                    controller: pricePerUnitController,
-                    titileText: "Price per Unit",
-                    hintText: "0.0",
-                    onChanged: (value) {
-                      Preference.setString(PrefKeys.unitPrice, value);
-                    },
-                  ),
-                ],
-                context: context,
-              ),
-            ),
-            SizedBox(height: Sizes.height * .02),
             Container(
               height: 40,
               decoration: BoxDecoration(
@@ -197,7 +175,6 @@ class _MeterListScreenState extends State<MeterListScreen> {
                         value: _pageSize,
                         onChanged: (int? newValue) {
                           if (newValue != null) {
-                            // null check
                             _onPageSizeChanged(newValue);
                           }
                         },
@@ -265,78 +242,105 @@ class _MeterListScreenState extends State<MeterListScreen> {
             Table(
               border: TableBorder.all(color: Colors.grey),
               defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-
               children: [
+                // Table Header Row
                 TableRow(
                   decoration: BoxDecoration(color: Color(0xffE5FDDD)),
                   children: [
-                    tableHeader("Room No"),
-                    tableHeader("Floor"),
-                    tableHeader("Building"),
-                    tableHeader("Opening"),
-                    tableHeader("Closing"),
-                    tableHeader("Unit Price"),
-                    tableHeader("Final Price"),
-                    tableHeader("Students"),
+                    tableHeader('Expanse Date'),
+                    tableHeader('Expanse Amount'),
+                    tableHeader('Per Person Amt.'),
+                    tableHeader('Total Student'),
+                    tableHeader('Remark'),
+                    tableHeader('Action'),
                   ],
                 ),
-                ..._pagedData.expand((meter) {
-                  if (meter.structure == null) return <TableRow>[];
-                  return meter.structure!.map((room) {
-                    List<dynamic> students = [];
-                    if (room.studentStructure != null &&
-                        room.studentStructure!.isNotEmpty) {
-                      try {
-                        String raw = room.studentStructure!;
+                // Table Data Rows
+                ..._pagedData.map((voucher) {
+                  return TableRow(
+                    decoration: BoxDecoration(color: AppColor.white),
 
-                        // Step 1: Add quotes around keys
-                        raw = raw.replaceAllMapped(
-                          RegExp(r'(\w+):'),
-                          (m) => '"${m[1]}":',
-                        );
-
-                        // Step 2: Add quotes around unquoted string values (but skip numbers)
-                        raw = raw.replaceAllMapped(
-                          RegExp(r': ([^"\[\]\d][^,\}]*)([,}])'),
-                          (m) => ': "${m[1]!.trim()}"${m[2]}',
-                        );
-
-                        // Step 3: Decode fixed JSON
-                        students = jsonDecode(raw);
-                      } catch (e) {
-                        print(
-                          "JSON decode error: $e\nOriginal: ${room.studentStructure}",
-                        );
-                      }
-                    }
-
-                    return TableRow(
-                      children: [
-                        tableBody(room.roomNo ?? ""),
-                        tableBody(meter.floor ?? ""),
-                        tableBody(meter.building ?? ""),
-                        tableBody(room.opningReding ?? ""),
-                        tableBody(room.closingReding ?? ""),
-                        tableBody(room.unit ?? ""),
-                        tableBody(room.price ?? ""),
-                        TableCell(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children:
-                                students.map<Widget>((s) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: Text(
-                                      "${s['student_name'] ?? ''} | ₹${s['price'] ?? ''}\n",
-                                      style: TextStyle(fontSize: 12),
-                                    ),
+                    children: [
+                      tableBody(voucher.date.toString()),
+                      tableBody(voucher.price ?? ''),
+                      tableBody(voucher.perPersonPrice ?? ''),
+                      tableBody(voucher.structure?.length.toString() ?? ''),
+                      tableBody(voucher.remark ?? ''),
+                      TableCell(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            children: [
+                              IconButton(
+                                icon: Image.asset(height: 20, Images.edit),
+                                onPressed: () async {
+                                  var updatedData = await Navigator.of(
+                                    context,
+                                  ).pushNamed(
+                                    '/hostler Expanse',
+                                    arguments: voucher,
                                   );
-                                }).toList(),
+                                  if (updatedData == "New Data") {
+                                    getExtraExpanse().then((value) {
+                                      setState(() {});
+                                    });
+                                  }
+                                },
+                              ),
+
+                              IconButton(
+                                icon: Image.asset(height: 20, Images.delete),
+                                onPressed: () {
+                                  showDialog(
+                                    context: context,
+                                    builder:
+                                        (dialogContext) => AlertDialog(
+                                          title: const Text("Warning"),
+                                          content: const Text(
+                                            "Are you sure you want to delete this item?",
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed:
+                                                  () =>
+                                                      Navigator.of(
+                                                        dialogContext,
+                                                      ).pop(),
+                                              child: const Text("Cancel"),
+                                            ),
+                                            ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: AppColor.red,
+                                              ),
+                                              onPressed: () {
+                                                deleteItem(voucher.id!).then((
+                                                  value,
+                                                ) {
+                                                  getExtraExpanse().then((
+                                                    value,
+                                                  ) {
+                                                    setState(() {
+                                                      Navigator.of(
+                                                        dialogContext,
+                                                      ).pop();
+                                                    });
+                                                  });
+                                                });
+                                              },
+                                              child: const Text("Delete"),
+                                            ),
+                                          ],
+                                        ),
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    );
-                  });
+                      ),
+                    ],
+                  );
                 }).toList(),
               ],
             ),
@@ -376,17 +380,15 @@ class _MeterListScreenState extends State<MeterListScreen> {
     );
   }
 
-  Future getFeesList() async {
+  Future getExtraExpanse() async {
     var response = await ApiService.fetchData(
-      "mitareding?session_id=${Preference.getint(PrefKeys.sessionId)}&licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
+      "perstudent?licence_no=${Preference.getString(PrefKeys.licenseNo)}&branch_id=${Preference.getint(PrefKeys.locationId)}",
     );
-    if (response["status"] == true) {
-      feesList = meterReadingModelFromJson(response['data']);
-    }
+    voucherList = extraExpanseModelFromJson(response['data']);
   }
 
-  Future deleteHostler(int id) async {
-    var response = await ApiService.deleteData("mitareding/$id");
+  Future deleteItem(int id) async {
+    var response = await ApiService.deleteData("perstudent/$id");
     if (response["status"] == true) {
       showCustomSnackbarSuccess(context, response['message']);
     } else {
